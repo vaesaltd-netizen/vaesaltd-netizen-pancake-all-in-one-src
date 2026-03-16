@@ -72,21 +72,22 @@
       const selectedType = conv.selectedType || '';
       const selectedId = conv.selectedId || '';
 
-      // Try getting post_id from conv.data
+      // Try getting post_id from conv.data (extract short ID only)
       if (conv.data && Array.isArray(conv.data)) {
         const currentConv = conv.data.find(c => c.id === selectedId);
         if (currentConv && currentConv.post_id) {
-          postId = currentConv.post_id;
+          // post_id format: "pageId_postShortId" → extract postShortId only
+          const parts = currentConv.post_id.split('_');
+          postId = parts.length > 1 ? parts[1] : currentConv.post_id;
         }
       }
 
-      // Fallback: derive post_id from COMMENT conv_id
+      // Fallback: derive from COMMENT conv_id
       // COMMENT conv_id format: "{post_short_id}_{comment_id}"
-      // post_id = page_id + '_' + post_short_id
-      if (!postId && selectedType === 'COMMENT' && selectedId && pageId) {
+      if (!postId && selectedType === 'COMMENT' && selectedId) {
         const postShortId = selectedId.split('_')[0];
         if (postShortId) {
-          postId = pageId + '_' + postShortId;
+          postId = postShortId;
         }
       }
 
