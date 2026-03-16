@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#logoGrad)"/>
+  <ellipse cx="48" cy="40" rx="20" ry="10" stroke="white" stroke-width="7"/>
+  <path d="M28 40v32c0 5.6 8.8 10 20 10s20-4.4 20-10V40" stroke="white" stroke-width="7"/>
+  <path d="M28 56c0 5.6 8.8 10 20 10s20-4.4 20-10" stroke="white" stroke-width="7"/>
+  <path d="M76 64h20" stroke="white" stroke-width="8" stroke-linecap="round"/>
+  <path d="M88 52l12 12-12 12" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="logoGrad" x1="8" y1="8" x2="120" y2="120">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#0891B2"/>
+    </linearGradient>
+  </defs>
+</svg>

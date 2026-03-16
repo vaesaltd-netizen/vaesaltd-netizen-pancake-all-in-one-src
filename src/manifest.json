@@ -1,0 +1,87 @@
+{
+  "manifest_version": 3,
+  "name": "Pancake All-in-One (CRM + Translator)",
+  "version": "1.0.0",
+  "description": "CRM + AI Translator cho Pancake.vn - VAESA Trading Co., Ltd",
+
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+
+  "host_permissions": [
+    "https://pancake.vn/*",
+    "https://*.pancake.vn/*",
+    "https://pages.fm/*",
+    "https://*.pages.fm/*",
+    "https://vaesa.soly.com.vn/*",
+    "https://script.google.com/*",
+    "https://vaesa-proxy.vaesa-ltd.workers.dev/*",
+    "https://api.openai.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://pancake.vn/*"],
+      "js": ["crm/content.js"],
+      "css": ["crm/content.css"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://pancake.vn/*",
+        "https://*.pancake.vn/*",
+        "https://pages.fm/*",
+        "https://*.pages.fm/*"
+      ],
+      "js": [
+        "translator/lib/license-service.js",
+        "translator/lib/language-detector.js",
+        "translator/lib/language-worker-client.js",
+        "translator/lib/openai-translator.js",
+        "translator/content-scripts/inline-translator.js",
+        "translator/content-scripts/inline-toolbar.js"
+      ],
+      "css": [
+        "translator/styles/inline.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["crm/injected.js"],
+      "matches": ["https://pancake.vn/*"]
+    },
+    {
+      "resources": ["translator/lib/language-worker.js"],
+      "matches": [
+        "https://pancake.vn/*",
+        "https://*.pancake.vn/*",
+        "https://pages.fm/*",
+        "https://*.pages.fm/*"
+      ]
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    },
+    "default_title": "Pancake All-in-One Settings"
+  },
+
+  "icons": {
+    "16": "assets/icon-16.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  }
+}
