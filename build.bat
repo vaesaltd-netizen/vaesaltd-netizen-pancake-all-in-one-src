@@ -54,7 +54,7 @@ if not exist ".git" (
 
 git add -A
 git commit -m "Update dist: %date% %time:~0,5%"
-git push -u origin main
+git push --force -u origin main
 
 cd /d "%~dp0"
 
@@ -73,7 +73,7 @@ if not exist ".git" (
 
 git add -A
 git commit -m "Update src: %date% %time:~0,5%"
-git push -u origin main
+git push --force -u origin main
 
 echo.
 echo ==========================================
