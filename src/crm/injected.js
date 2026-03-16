@@ -76,15 +76,17 @@
       if (conv.data && Array.isArray(conv.data)) {
         const currentConv = conv.data.find(c => c.id === selectedId);
         if (currentConv && currentConv.post_id) {
-          // post_id format: "pageId_postShortId" → extract postShortId only
+          // Extract the last numeric part as post short ID
+          // Facebook: "pageId_postShortId" → postShortId
+          // TikTok: "ttm_xxx_videoId" → videoId (last part)
           const parts = currentConv.post_id.split('_');
-          postId = parts.length > 1 ? parts[1] : currentConv.post_id;
+          postId = parts[parts.length - 1];
         }
       }
 
-      // Fallback: derive from COMMENT conv_id
+      // Fallback: derive from COMMENT conv_id (Facebook only)
       // COMMENT conv_id format: "{post_short_id}_{comment_id}"
-      if (!postId && selectedType === 'COMMENT' && selectedId) {
+      if (!postId && selectedType === 'COMMENT' && selectedId && !isTikTok) {
         const postShortId = selectedId.split('_')[0];
         if (postShortId) {
           postId = postShortId;
