@@ -920,12 +920,13 @@
         globalId: result.data.globalId || '',
         pageId,
         adsId: result.data.adsId || '',
+        postId: result.data.postId || '',
         facebook: conversationId, // Pancake conversation ID (e.g., 786439674562387_25295945770063202)
         linkPageFacebook: pageId ? `https://facebook.com/${pageId}` : '',
         isTikTok
       };
 
-      console.log('[Pancake CRM] pageId:', pageId, 'adsId:', currentData.adsId);
+      console.log('[Pancake CRM] pageId:', pageId, 'adsId:', currentData.adsId, 'postId:', currentData.postId);
 
       // Fill form - clear all fields first, then populate with new data
       document.getElementById('pcrm-name').value = currentData.name;
@@ -935,11 +936,12 @@
       document.getElementById('pcrm-linkpage').value = currentData.linkPageFacebook;
       document.getElementById('pcrm-note').value = ''; // Clear old note first
 
-      // Lookup ads note if ads_id exists
-      if (currentData.adsId) {
+      // Lookup note: prioritize AD_ID, fallback to Post ID
+      const mappingId = currentData.adsId || currentData.postId;
+      if (mappingId) {
         chrome.runtime.sendMessage({
           action: 'getAdsNote',
-          adsId: currentData.adsId
+          adsId: mappingId
         }, (response) => {
           if (response && response.note) {
             document.getElementById('pcrm-note').value = response.note;

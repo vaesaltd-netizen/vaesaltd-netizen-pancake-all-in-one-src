@@ -65,12 +65,40 @@
       // DEBUG: Log conversation ID
       console.log('[Pancake CRM] conversationId:', conversationId, 'threadId:', threadId);
 
+      // Extract Post ID for COMMENT conversations
+      // 1. Try from conv.data array (post_id field)
+      // 2. Fallback: derive from selectedId for COMMENT type
+      let postId = '';
+      const selectedType = conv.selectedType || '';
+      const selectedId = conv.selectedId || '';
+
+      // Try getting post_id from conv.data
+      if (conv.data && Array.isArray(conv.data)) {
+        const currentConv = conv.data.find(c => c.id === selectedId);
+        if (currentConv && currentConv.post_id) {
+          postId = currentConv.post_id;
+        }
+      }
+
+      // Fallback: derive post_id from COMMENT conv_id
+      // COMMENT conv_id format: "{post_short_id}_{comment_id}"
+      // post_id = page_id + '_' + post_short_id
+      if (!postId && selectedType === 'COMMENT' && selectedId && pageId) {
+        const postShortId = selectedId.split('_')[0];
+        if (postShortId) {
+          postId = pageId + '_' + postShortId;
+        }
+      }
+
+      console.log('[Pancake CRM] Post ID:', postId, 'selectedType:', selectedType);
+
       const data = {
         name: (conv.selectedFrom && conv.selectedFrom.name) || '',
         fbId: fromId || (conv.selectedFrom && conv.selectedFrom.psid) || '',
         globalId: '',
         phone: '',
         adsId: '',
+        postId,
         pageId,
         conversationId, // Pancake conversation ID (e.g., 703803792818806_24907229868926829)
         // TikTok specific fields
