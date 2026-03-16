@@ -559,7 +559,6 @@ async function sendToCRM(payload) {
       headers: {
         'Content-Type': 'application/json'
       },
-      credentials: 'include',
       body: JSON.stringify(payload)
     });
 
