@@ -95,6 +95,13 @@
 
   console.log('[Pancake CRM] Extension loaded');
 
+  // Refresh ads mapping cache on page load (always fetch latest from sheet)
+  chrome.runtime.sendMessage({ action: 'refreshAdsMapping' }, (response) => {
+    if (response && response.success) {
+      console.log('[Pancake CRM] Ads mapping refreshed on page load');
+    }
+  });
+
   // ============================================
   // DOM ELEMENTS - Wait for DOM to be ready
   // ============================================

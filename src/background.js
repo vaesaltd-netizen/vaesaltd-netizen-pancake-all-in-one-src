@@ -243,16 +243,25 @@ async function fetchERPList(endpoint, domain = [], limit = 100) {
  * Fetch all ads mapping from Google Sheet (batch fetch for performance)
  * Called once, cached in memory for instant lookup
  */
-async function fetchAllAdsMapping() {
+async function fetchAllAdsMapping(forceRefresh = false) {
+  // If force refresh, clear all caches
+  if (forceRefresh) {
+    adsMapping = null;
+    await chrome.storage.local.remove(ADS_CACHE_KEY);
+    console.log('[Pancake CRM] Ads mapping cache cleared (force refresh)');
+  }
+
   // Return memory cache if available
   if (adsMapping) {
     return { success: true, data: adsMapping };
   }
 
-  // Try load from chrome.storage.local first
-  const fromCache = await loadAdsMappingFromStorage();
-  if (fromCache) {
-    return { success: true, data: adsMapping };
+  // Try load from chrome.storage.local first (only if not force refresh)
+  if (!forceRefresh) {
+    const fromCache = await loadAdsMappingFromStorage();
+    if (fromCache) {
+      return { success: true, data: adsMapping };
+    }
   }
 
   // Prevent multiple simultaneous fetches
