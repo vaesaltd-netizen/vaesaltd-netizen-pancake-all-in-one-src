@@ -157,7 +157,7 @@
             ${ICONS.manual}
           </button>
         </div>
-        <input type="text" id="pcrm-name" readonly placeholder="Chưa có dữ liệu">
+        <input type="text" id="pcrm-name" placeholder="Chưa có dữ liệu">
       </div>
 
       <div class="pcrm-field">
@@ -185,7 +185,7 @@
       <div class="pcrm-field pcrm-field-search">
         <label>Ghi Chú</label>
         <div class="pcrm-search-wrapper">
-          <input type="text" id="pcrm-note" placeholder="Tự động từ Ads ID" autocomplete="off">
+          <input type="text" id="pcrm-note" readonly placeholder="Tự động từ Ads ID" autocomplete="off">
           <button type="button" class="pcrm-dropdown-toggle pcrm-note-toggle-hidden" id="pcrm-note-toggle" aria-label="Chọn mã content">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
           </button>
