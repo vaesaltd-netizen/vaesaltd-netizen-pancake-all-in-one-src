@@ -737,10 +737,11 @@
       fbEl.setAttribute('readonly', true);
       fbIdEl.setAttribute('readonly', true);
 
-      // Auto-sync phone → ID Hội Thoại + ID Khách Hàng
+      // Auto-sync phone → ID Hội Thoại + ID Khách Hàng + Link Page
       phoneEl._manualHandler = () => {
         fbEl.value = phoneEl.value;
         fbIdEl.value = phoneEl.value;
+        linkEl.value = phoneEl.value;
       };
       phoneEl.addEventListener('input', phoneEl._manualHandler);
     } else {
