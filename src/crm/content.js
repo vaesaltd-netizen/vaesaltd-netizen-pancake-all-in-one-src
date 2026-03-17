@@ -948,20 +948,21 @@
       document.getElementById('pcrm-linkpage').value = currentData.linkPageFacebook;
       document.getElementById('pcrm-note').value = ''; // Clear old note first
 
-      // Lookup note: prioritize AD_ID (from ads_id column), fallback to Post ID (from post_id column)
-      if (currentData.adsId) {
+      // Lookup note based on conversation type:
+      // COMMENT → use postId (column C), INBOX/Mess → use adsId (column B)
+      if (channelSuffix === 'C' && currentData.postId) {
         chrome.runtime.sendMessage({
-          action: 'getAdsNote',
-          adsId: currentData.adsId
+          action: 'getPostNote',
+          postId: currentData.postId
         }, (response) => {
           if (response && response.note) {
             document.getElementById('pcrm-note').value = response.note + '|' + channelSuffix;
           }
         });
-      } else if (currentData.postId) {
+      } else if (currentData.adsId) {
         chrome.runtime.sendMessage({
-          action: 'getPostNote',
-          postId: currentData.postId
+          action: 'getAdsNote',
+          adsId: currentData.adsId
         }, (response) => {
           if (response && response.note) {
             document.getElementById('pcrm-note').value = response.note + '|' + channelSuffix;
