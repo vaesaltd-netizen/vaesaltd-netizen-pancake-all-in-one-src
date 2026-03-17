@@ -103,6 +103,7 @@
         adsId: '',
         postId,
         pageId,
+        selectedType,
         conversationId, // Pancake conversation ID (e.g., 703803792818806_24907229868926829)
         // TikTok specific fields
         isTikTok,

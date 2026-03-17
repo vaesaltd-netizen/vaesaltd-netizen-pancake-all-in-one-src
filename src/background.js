@@ -15,6 +15,7 @@ const CONFIG = {
 
 // Cache for ads mapping - fetched once, used for instant lookup
 let adsMapping = null;
+let postMapping = null; // post_id → note mapping (from column C)
 let adsMappingLoading = false;
 
 const ADS_CACHE_KEY = 'adsMapping';
@@ -25,8 +26,10 @@ async function loadAdsMappingFromStorage() {
     const result = await chrome.storage.local.get(ADS_CACHE_KEY);
     const cached = result[ADS_CACHE_KEY];
     if (cached && cached.data && (Date.now() - cached.timestamp < ADS_CACHE_TTL)) {
-      adsMapping = cached.data;
+      adsMapping = cached.data.ads || cached.data;
+      postMapping = cached.data.posts || null;
       console.log('[Pancake CRM] Ads mapping loaded from local cache:', Object.keys(adsMapping).length, 'entries');
+      if (postMapping) console.log('[Pancake CRM] Post mapping loaded from local cache:', Object.keys(postMapping).length, 'entries');
       return true;
     }
   } catch (e) {
@@ -86,6 +89,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === 'getPostNote') {
+    fetchPostNote(request.postId).then(sendResponse);
+    return true;
+  }
+
   if (request.action === 'preloadAdsMapping') {
     fetchAllAdsMapping().then(sendResponse);
     return true;
@@ -93,6 +101,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'refreshAdsMapping') {
     adsMapping = null;
+    postMapping = null;
     chrome.storage.local.remove(ADS_CACHE_KEY);
     fetchAllAdsMapping().then(sendResponse);
     return true;
@@ -280,9 +289,19 @@ async function fetchAllAdsMapping(forceRefresh = false) {
   adsMappingLoading = true;
   try {
     const response = await fetch(`${CONFIG.SHEET_API_URL}?action=adsAll`);
-    adsMapping = await response.json();
+    const rawData = await response.json();
+    // New format: { ads: { adsId: note }, posts: { postId: note } }
+    // Old format fallback: { adsId: note } (flat)
+    if (rawData.ads && rawData.posts) {
+      adsMapping = rawData.ads;
+      postMapping = rawData.posts;
+    } else {
+      adsMapping = rawData;
+      postMapping = {};
+    }
     console.log('[Pancake CRM] Ads mapping fetched from sheet:', Object.keys(adsMapping).length, 'entries');
-    await saveAdsMappingToStorage(adsMapping);
+    console.log('[Pancake CRM] Post mapping fetched from sheet:', Object.keys(postMapping).length, 'entries');
+    await saveAdsMappingToStorage({ ads: adsMapping, posts: postMapping });
     return { success: true, data: adsMapping };
   } catch (error) {
     console.error('fetchAllAdsMapping error:', error);
@@ -302,6 +321,19 @@ async function fetchAdsNote(adsId) {
   }
 
   const note = adsMapping?.[adsId] || '';
+  return { success: true, note };
+}
+
+/**
+ * Get post note from cached post mapping (instant lookup)
+ */
+async function fetchPostNote(postId) {
+  // Ensure mapping is loaded
+  if (!postMapping) {
+    await fetchAllAdsMapping();
+  }
+
+  const note = postMapping?.[postId] || '';
   return { success: true, note };
 }
 

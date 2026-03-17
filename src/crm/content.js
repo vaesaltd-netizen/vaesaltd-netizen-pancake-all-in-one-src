@@ -838,7 +838,7 @@
         div.textContent = code;
         div.addEventListener('mousedown', (e) => {
           e.preventDefault();
-          noteInput.value = code;
+          noteInput.value = code + '|K';
           noteDropdown.classList.remove('show');
           noteToggle.classList.remove('open');
         });
@@ -920,6 +920,10 @@
         profileId = result.data.globalId;
       }
 
+      // Determine channel type: M=Mess, C=Comment, K=Manual
+      const selectedType = result.data.selectedType || '';
+      const channelSuffix = selectedType === 'COMMENT' ? 'C' : 'M';
+
       currentData = {
         name: result.data.name,
         phone: result.data.phone || '',
@@ -928,12 +932,13 @@
         pageId,
         adsId: result.data.adsId || '',
         postId: result.data.postId || '',
+        channelSuffix,
         facebook: conversationId, // Pancake conversation ID (e.g., 786439674562387_25295945770063202)
         linkPageFacebook: pageId ? `https://facebook.com/${pageId}` : '',
         isTikTok
       };
 
-      console.log('[Pancake CRM] pageId:', pageId, 'adsId:', currentData.adsId, 'postId:', currentData.postId);
+      console.log('[Pancake CRM] pageId:', pageId, 'adsId:', currentData.adsId, 'postId:', currentData.postId, 'channel:', channelSuffix);
 
       // Fill form - clear all fields first, then populate with new data
       document.getElementById('pcrm-name').value = currentData.name;
@@ -943,15 +948,23 @@
       document.getElementById('pcrm-linkpage').value = currentData.linkPageFacebook;
       document.getElementById('pcrm-note').value = ''; // Clear old note first
 
-      // Lookup note: prioritize AD_ID, fallback to Post ID
-      const mappingId = currentData.adsId || currentData.postId;
-      if (mappingId) {
+      // Lookup note: prioritize AD_ID (from ads_id column), fallback to Post ID (from post_id column)
+      if (currentData.adsId) {
         chrome.runtime.sendMessage({
           action: 'getAdsNote',
-          adsId: mappingId
+          adsId: currentData.adsId
         }, (response) => {
           if (response && response.note) {
-            document.getElementById('pcrm-note').value = response.note;
+            document.getElementById('pcrm-note').value = response.note + '|' + channelSuffix;
+          }
+        });
+      } else if (currentData.postId) {
+        chrome.runtime.sendMessage({
+          action: 'getPostNote',
+          postId: currentData.postId
+        }, (response) => {
+          if (response && response.note) {
+            document.getElementById('pcrm-note').value = response.note + '|' + channelSuffix;
           }
         });
       }
