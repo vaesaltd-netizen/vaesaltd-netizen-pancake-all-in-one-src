@@ -294,7 +294,7 @@
       <button type="button" class="pcrm-btn-add-line" id="pcrm-add-line">+ Thêm sản phẩm</button>
 
       <div class="pcrm-field" style="margin-top:12px">
-        <label>Chiết Khấu Bổ Sung (đ)</label>
+        <label>Chiết Khấu (đ)</label>
         <input type="number" id="pcrm-order-discount" placeholder="VD: 500000 = 500.000đ" min="0">
         <span class="pcrm-field-hint" id="pcrm-discount-hint"></span>
       </div>
@@ -1327,7 +1327,7 @@
 
     // Build order_line from product lines
     const lines = orderLinesContainer.querySelectorAll('.pcrm-order-line');
-    const orderLine = [];
+    const lineItems = [];
     for (const line of lines) {
       const productId = parseInt(line.querySelector('.pcrm-line-product').value);
       const qty = parseInt(line.querySelector('.pcrm-line-qty').value) || 1;
@@ -1335,12 +1335,40 @@
         showOrderStatus('Vui lòng chọn sản phẩm cho tất cả các dòng!', 'error');
         return;
       }
-      orderLine.push([0, 0, { product_id: productId, product_uom_qty: qty }]);
+      const product = orderProductOptions.find(p => p.id === productId);
+      const price = product ? product.price : 0;
+      lineItems.push({ productId, qty, price });
     }
 
-    if (orderLine.length === 0) {
+    if (lineItems.length === 0) {
       showOrderStatus('Vui lòng thêm ít nhất 1 sản phẩm!', 'error');
       return;
+    }
+
+    // Distribute discount proportionally across products
+    const totalDiscount = parseInt(document.getElementById('pcrm-order-discount').value) || 0;
+    const totalOriginalPrice = lineItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const orderLine = [];
+
+    if (totalDiscount > 0 && totalOriginalPrice > 0) {
+      let discountUsed = 0;
+      for (let i = 0; i < lineItems.length; i++) {
+        const item = lineItems[i];
+        const lineData = { product_id: item.productId, product_uom_qty: item.qty };
+        if (i === lineItems.length - 1) {
+          // Last item gets remaining discount to ensure exact total
+          lineData.discount_fixed = totalDiscount - discountUsed;
+        } else {
+          const itemDiscount = Math.floor(item.price * item.qty / totalOriginalPrice * totalDiscount);
+          lineData.discount_fixed = itemDiscount;
+          discountUsed += itemDiscount;
+        }
+        orderLine.push([0, 0, lineData]);
+      }
+    } else {
+      for (const item of lineItems) {
+        orderLine.push([0, 0, { product_id: item.productId, product_uom_qty: item.qty }]);
+      }
     }
 
     // Build payload - API /create tạo cả KH + đơn hàng cùng lúc
@@ -1369,7 +1397,7 @@
       nhanvienkinhdoanhghichu: document.getElementById('pcrm-order-staffnote').value,
       note: document.getElementById('pcrm-order-shipnote').value,
       order_line: orderLine,
-      chietkhaubosung: parseInt(document.getElementById('pcrm-order-discount').value) || 0
+      chietkhaubosung: 0
     };
 
     const payload = { thongtinkhachhang, thongtindonhang };
