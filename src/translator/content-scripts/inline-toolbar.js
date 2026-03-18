@@ -705,6 +705,7 @@
       // Listen on document in capture phase - survives DOM re-renders
       document.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' || e.shiftKey) return;
+        if (e.isComposing) return; // Ignore Enter during IME composition (e.g. Vietnamese input on Mac)
         if (!e.isTrusted) return; // CRITICAL: ignore synthetic Enter to prevent infinite loop
         if (!this.aiAutoSendEnabled || this.isLoading) return;
 

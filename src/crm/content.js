@@ -1339,6 +1339,11 @@
       showOrderStatus('Chưa có dữ liệu KH. Vui lòng bấm Quét trước!', 'error');
       return;
     }
+    const noteValue = document.getElementById('pcrm-note').value;
+    if (!noteValue) {
+      showOrderStatus('Ghi Chú không được để trống!', 'error');
+      return;
+    }
 
     // Build order_line from product lines
     const lines = orderLinesContainer.querySelectorAll('.pcrm-order-line');
