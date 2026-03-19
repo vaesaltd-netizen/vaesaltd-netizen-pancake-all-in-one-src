@@ -7,16 +7,31 @@
 (function() {
   'use strict';
 
+  // Check license on startup — don't show CRM if invalid
+  let crmLicenseValid = true; // assume valid, will be checked
+  chrome.storage.local.get('licenseValid', (data) => {
+    if (data.licenseValid !== true) {
+      crmLicenseValid = false;
+      hideCrmUI();
+      console.log('[CRM] No valid license — UI hidden on startup');
+    }
+  });
+
   // Listen for license invalidation — remove all CRM UI immediately
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'LICENSE_INVALID') {
-      const btn = document.getElementById('pancake-crm-btn');
-      const popup = document.getElementById('pancake-crm-popup');
-      if (btn) btn.style.display = 'none';
-      if (popup) { popup.classList.remove('show'); popup.style.display = 'none'; }
+      crmLicenseValid = false;
+      hideCrmUI();
       console.log('[CRM] License invalid — UI disabled');
     }
   });
+
+  function hideCrmUI() {
+    const btn = document.getElementById('pancake-crm-btn');
+    const popup = document.getElementById('pancake-crm-popup');
+    if (btn) btn.style.display = 'none';
+    if (popup) { popup.classList.remove('show'); popup.style.display = 'none'; }
+  }
 
   // State - closure-scoped for security (not exposed to window)
   let currentData = {};
@@ -120,6 +135,12 @@
   function initUI() {
     // Prevent duplicate injection
     if (document.getElementById('pancake-crm-btn')) return;
+
+    // Don't inject UI if license is invalid
+    if (!crmLicenseValid) {
+      console.log('[CRM] License invalid — skipping UI injection');
+      return;
+    }
 
     // SVG Icons (Heroicons)
     const ICONS = {
