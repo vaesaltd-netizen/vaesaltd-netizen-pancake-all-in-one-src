@@ -74,8 +74,10 @@ async function validateLicenseWithVPS(licenseKey) {
       console.log('[License] Validated OK:', data.userName);
       return { valid: true, userName: data.userName, groupName: data.groupName, expiresAt: data.expiresAt, apiKey: data.apiKey || null };
     } else {
-      // Mark license as INVALID globally
+      // Mark license as INVALID globally + clear cache so getCachedLicense() also returns invalid
       await chrome.storage.local.set({ licenseValid: false, licenseError: data.error || 'License khong hop le' });
+      await chrome.storage.local.remove([LICENSE_CONFIG.CACHE_KEY, 'pitLicenseCache']);
+      chrome.alarms.clear(LICENSE_CONFIG.REFRESH_ALARM);
 
       // Broadcast to all tabs: disable all features
       broadcastLicenseInvalid();
