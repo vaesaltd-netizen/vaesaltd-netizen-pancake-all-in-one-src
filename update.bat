@@ -5,7 +5,7 @@ color 0B
 
 echo ==========================================
 echo   VAESA All-in-One Extension - Auto Update
-echo   (CRM + Translator)
+echo   (CRM + Translator + Auto Inbox)
 echo ==========================================
 echo.
 echo Dang tai ban moi nhat tu GitHub...
@@ -46,6 +46,10 @@ echo Dang cap nhat...
 copy /y "%EXTRACTED%\manifest.json" "%~dp0manifest.json" >nul
 copy /y "%EXTRACTED%\background.js" "%~dp0background.js" >nul
 
+:: === Shared module (License) ===
+if not exist "%~dp0shared" mkdir "%~dp0shared"
+copy /y "%EXTRACTED%\shared\license.js" "%~dp0shared\license.js" >nul
+
 :: === CRM module ===
 if not exist "%~dp0crm" mkdir "%~dp0crm"
 copy /y "%EXTRACTED%\crm\content.js" "%~dp0crm\content.js" >nul
@@ -68,6 +72,17 @@ copy /y "%EXTRACTED%\translator\content-scripts\inline-toolbar.js" "%~dp0transla
 
 copy /y "%EXTRACTED%\translator\styles\inline.css" "%~dp0translator\styles\inline.css" >nul
 
+:: === Auto Inbox module ===
+if not exist "%~dp0auto-inbox\js" mkdir "%~dp0auto-inbox\js"
+if not exist "%~dp0auto-inbox\css" mkdir "%~dp0auto-inbox\css"
+if not exist "%~dp0auto-inbox\icons" mkdir "%~dp0auto-inbox\icons"
+
+copy /y "%EXTRACTED%\auto-inbox\js\*.js" "%~dp0auto-inbox\js\" >nul 2>nul
+copy /y "%EXTRACTED%\auto-inbox\css\*.css" "%~dp0auto-inbox\css\" >nul 2>nul
+copy /y "%EXTRACTED%\auto-inbox\icons\*" "%~dp0auto-inbox\icons\" >nul 2>nul
+copy /y "%EXTRACTED%\auto-inbox\sidepanel.html" "%~dp0auto-inbox\sidepanel.html" >nul 2>nul
+copy /y "%EXTRACTED%\auto-inbox\rules.json" "%~dp0auto-inbox\rules.json" >nul 2>nul
+
 :: === Popup ===
 if not exist "%~dp0popup" mkdir "%~dp0popup"
 copy /y "%EXTRACTED%\popup\popup.html" "%~dp0popup\popup.html" >nul
@@ -89,6 +104,6 @@ echo.
 echo Buoc tiep theo:
 echo   1. Mo Chrome -^> chrome://extensions
 echo   2. Bam nut reload tren extension
-echo   3. F5 lai trang Pancake
+echo   3. F5 lai trang Pancake va Facebook
 echo.
 pause
