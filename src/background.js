@@ -75,7 +75,50 @@ const CONTENT_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 tiếng
 /**
  * Listen for messages from content script
  */
+// Actions that DON'T require license (license management itself)
+const LICENSE_FREE_ACTIONS = [
+  'VALIDATE_LICENSE', 'CHECK_LICENSE', 'CLEAR_LICENSE', 'GET_LICENSE_STATUS'
+];
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Gate-keep: check license for all feature actions
+  if (!LICENSE_FREE_ACTIONS.includes(request.action)) {
+    chrome.storage.local.get('licenseValid', (data) => {
+      if (data.licenseValid !== true) {
+        sendResponse({ error: 'License khong hop le. Vui long nhap License Key.', licenseRequired: true });
+        return;
+      }
+      // License valid — process the request
+      handleMessage(request, sender, sendResponse);
+    });
+    return true; // async
+  }
+
+  // License-free actions: process directly
+  return handleLicenseMessage(request, sender, sendResponse);
+});
+
+function handleLicenseMessage(request, sender, sendResponse) {
+  if (request.action === 'VALIDATE_LICENSE') {
+    validateLicenseWithVPS(request.licenseKey).then(sendResponse);
+    return true;
+  }
+  if (request.action === 'CHECK_LICENSE') {
+    getCachedLicense().then(sendResponse);
+    return true;
+  }
+  if (request.action === 'CLEAR_LICENSE') {
+    clearLicense().then(() => sendResponse({ success: true }));
+    return true;
+  }
+  if (request.action === 'GET_LICENSE_STATUS') {
+    getCachedLicense().then(sendResponse);
+    return true;
+  }
+  return false;
+}
+
+function handleMessage(request, sender, sendResponse) {
   if (request.action === 'getSettings') {
     fetchSettings().then(sendResponse);
     return true; // Keep channel open for async response
@@ -248,27 +291,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // ==================== License Handlers ====================
-  if (request.action === 'VALIDATE_LICENSE') {
-    validateLicenseWithVPS(request.licenseKey).then(sendResponse);
-    return true;
-  }
-
-  if (request.action === 'CHECK_LICENSE') {
-    getCachedLicense().then(sendResponse);
-    return true;
-  }
-
-  if (request.action === 'CLEAR_LICENSE') {
-    clearLicense().then(() => sendResponse({ success: true }));
-    return true;
-  }
-
-  if (request.action === 'GET_LICENSE_STATUS') {
-    getCachedLicense().then(sendResponse);
-    return true;
-  }
-});
+}
 
 // Preload ads mapping when service worker starts
 (async () => {

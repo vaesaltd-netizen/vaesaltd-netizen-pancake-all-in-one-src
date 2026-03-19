@@ -7,6 +7,17 @@
 (function() {
   'use strict';
 
+  // Listen for license invalidation — remove all CRM UI immediately
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'LICENSE_INVALID') {
+      const btn = document.getElementById('pancake-crm-btn');
+      const popup = document.getElementById('pancake-crm-popup');
+      if (btn) btn.style.display = 'none';
+      if (popup) { popup.classList.remove('show'); popup.style.display = 'none'; }
+      console.log('[CRM] License invalid — UI disabled');
+    }
+  });
+
   // State - closure-scoped for security (not exposed to window)
   let currentData = {};
   let settingsData = null;

@@ -67,9 +67,18 @@ async function validateLicenseWithVPS(licenseKey) {
       // Setup auto-refresh alarm
       setupLicenseRefreshAlarm();
 
+      // Mark license as valid globally
+      await chrome.storage.local.set({ licenseValid: true, licenseError: null });
+
       console.log('[License] Validated OK:', data.userName);
       return { valid: true, userName: data.userName, groupName: data.groupName, expiresAt: data.expiresAt };
     } else {
+      // Mark license as INVALID globally
+      await chrome.storage.local.set({ licenseValid: false, licenseError: data.error || 'License khong hop le' });
+
+      // Broadcast to all tabs: disable all features
+      broadcastLicenseInvalid();
+
       return { valid: false, error: data.error || 'License khong hop le' };
     }
 
@@ -86,7 +95,26 @@ async function validateLicenseWithVPS(licenseKey) {
       }
     }
 
+    // If truly offline and no cache, mark invalid
+    await chrome.storage.local.set({ licenseValid: false, licenseError: 'Khong the ket noi server' });
     return { valid: false, error: 'Khong the ket noi server. Vui long kiem tra mang.' };
+  }
+}
+
+/**
+ * Broadcast LICENSE_INVALID to all open tabs — disable all features immediately
+ */
+async function broadcastLicenseInvalid() {
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'LICENSE_INVALID' });
+      } catch (_) { /* tab may not have content script */ }
+    }
+    console.log('[License] Broadcast LICENSE_INVALID to all tabs');
+  } catch (e) {
+    console.error('[License] Broadcast error:', e);
   }
 }
 
@@ -136,7 +164,9 @@ async function getCachedLicense() {
  */
 async function clearLicense() {
   await chrome.storage.local.remove([LICENSE_CONFIG.CACHE_KEY, 'pitLicenseCache']);
+  await chrome.storage.local.set({ licenseValid: false, licenseError: null });
   chrome.alarms.clear(LICENSE_CONFIG.REFRESH_ALARM);
+  broadcastLicenseInvalid();
   console.log('[License] Cleared');
 }
 
@@ -154,9 +184,12 @@ function setupLicenseRefreshAlarm() {
  */
 async function handleLicenseAlarm() {
   const cached = await getCachedLicense();
-  if (cached.valid && cached.licenseKey) {
+  if (cached.licenseKey) {
     console.log('[License] Auto-refreshing...');
-    await validateLicenseWithVPS(cached.licenseKey);
+    const result = await validateLicenseWithVPS(cached.licenseKey);
+    if (!result.valid) {
+      console.warn('[License] Auto-refresh: license no longer valid!', result.error);
+    }
   }
 }
 
@@ -181,6 +214,9 @@ async function initLicense() {
   const cached = await getCachedLicense();
 
   if (cached.valid && cached.licenseKey) {
+    // Mark license as valid in storage
+    await chrome.storage.local.set({ licenseValid: true, licenseError: null });
+
     // If cache is stale, refresh in background
     if (!cached.isFresh) {
       console.log('[License] Cache stale, refreshing...');
@@ -188,6 +224,9 @@ async function initLicense() {
     }
     // Setup alarm
     setupLicenseRefreshAlarm();
+  } else {
+    // No valid license
+    await chrome.storage.local.set({ licenseValid: false, licenseError: null });
   }
 
   console.log('[License] Init complete. Status:', cached.valid ? 'active' : 'no license');

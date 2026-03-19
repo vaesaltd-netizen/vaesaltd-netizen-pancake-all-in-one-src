@@ -5,6 +5,24 @@
 (function() {
   'use strict';
 
+  let licenseBlocked = false;
+
+  // Listen for license invalidation — stop all translation
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'LICENSE_INVALID') {
+      licenseBlocked = true;
+      console.log('[PIT] License invalid — translation disabled');
+    }
+  });
+
+  // Check license on startup
+  chrome.storage.local.get('licenseValid', (data) => {
+    if (data.licenseValid !== true) {
+      licenseBlocked = true;
+      console.log('[PIT] No valid license — translation disabled');
+    }
+  });
+
   const DEBUG = false;
   const log = (...args) => DEBUG && console.log('[PIT]', ...args);
 
@@ -301,6 +319,12 @@
 
     // ==================== Scan & Observe Messages ====================
     scanForMessages() {
+      // Skip if license is invalid
+      if (licenseBlocked) {
+        log('License invalid, skipping scan');
+        return;
+      }
+
       // Skip if auto-translate is disabled globally
       if (!this.autoTranslateEnabled) {
         log('Auto-translate disabled globally, skipping scan');

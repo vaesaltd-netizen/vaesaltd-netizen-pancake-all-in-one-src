@@ -2,6 +2,29 @@
 (function () {
   if (document.getElementById('vaesa-inbox-fab')) return;
 
+  // Listen for license invalidation — remove fab + panel immediately
+  chrome.runtime.onMessage.addListener(function (msg) {
+    if (msg.type === 'LICENSE_INVALID') {
+      var existingFab = document.getElementById('vaesa-inbox-fab');
+      var existingPanel = document.getElementById('vaesa-panel-frame');
+      if (existingFab) existingFab.style.display = 'none';
+      if (existingPanel) existingPanel.remove();
+      console.log('[AutoInbox] License invalid — UI disabled');
+    }
+  });
+
+  // Check license on startup — don't show fab if invalid
+  chrome.storage.local.get('licenseValid', function (data) {
+    if (data.licenseValid !== true) {
+      console.log('[AutoInbox] No valid license — fab hidden');
+      return; // Don't create fab
+    }
+    // License OK — show fab
+    initFab();
+  });
+
+  function initFab() {
+
   var fab = document.createElement('div');
   fab.id = 'vaesa-inbox-fab';
   fab.title = 'Vaesa Auto Inbox';
@@ -112,4 +135,5 @@
       if (panel) panel.remove();
     }
   });
+  } // end initFab()
 })();
