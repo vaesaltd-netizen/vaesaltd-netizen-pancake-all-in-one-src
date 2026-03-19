@@ -26,7 +26,8 @@
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''manifest.json'',''utf8''\\)\\); console.log\\(''VALID''\\)\")",
       "Bash(node -c background.js)",
       "Bash(node -c popup/popup.js)",
-      "Bash(node -c auto-inbox/js/content-inject.js)"
+      "Bash(node -c auto-inbox/js/content-inject.js)",
+      "Bash(node -e \"JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(''''src/manifest.json'''',''''utf8''''\\)\\); console.log\\(''''manifest OK''''\\)\")"
     ]
   }
 }

@@ -47,6 +47,15 @@
     },
     {
       "matches": [
+        "https://www.facebook.com/*",
+        "https://facebook.com/*",
+        "https://business.facebook.com/*"
+      ],
+      "js": ["auto-inbox/js/fab-button.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
         "https://pancake.vn/*",
         "https://*.pancake.vn/*",
         "https://pages.fm/*",
