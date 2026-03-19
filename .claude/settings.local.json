@@ -8,7 +8,25 @@
       "Bash(git config:*)",
       "Bash(git push:*)",
       "Bash(git pull:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(cp \"Auto inbox/js/fb-api.js\" src/auto-inbox/js/)",
+      "Bash(cp \"Auto inbox/js/pancake-api.js\" src/auto-inbox/js/)",
+      "Bash(cp \"Auto inbox/js/message-sender.js\" src/auto-inbox/js/)",
+      "Bash(cp \"Auto inbox/js/sidepanel.js\" src/auto-inbox/js/)",
+      "Bash(cp \"Auto inbox/js/template-db.js\" src/auto-inbox/js/)",
+      "Bash(cp \"Auto inbox/js/utils.js\" src/auto-inbox/js/)",
+      "Bash(cp \"Auto inbox/js/license.js\" src/auto-inbox/js/)",
+      "Bash(cp \"Auto inbox/js/content-inject.js\" src/auto-inbox/js/)",
+      "Bash(cp \"Auto inbox/css/sidepanel.css\" src/auto-inbox/css/)",
+      "Bash(cp \"Auto inbox/rules.json\" src/auto-inbox/)",
+      "Bash(cp \"Auto inbox/sidepanel.html\" src/auto-inbox/)",
+      "Bash(cp \"Auto inbox/icons/\"* src/auto-inbox/icons/)",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \"import json; json.load\\(open\\(''manifest.json''\\)\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''manifest.json'',''utf8''\\)\\); console.log\\(''VALID''\\)\")",
+      "Bash(node -c background.js)",
+      "Bash(node -c popup/popup.js)",
+      "Bash(node -c auto-inbox/js/content-inject.js)"
     ]
   }
 }
