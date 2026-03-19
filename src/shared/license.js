@@ -41,12 +41,13 @@ async function validateLicenseWithVPS(licenseKey) {
     const data = await response.json();
 
     if (data.valid) {
-      // Save to cache
+      // Save to cache (including apiKey from server)
       const cache = {
         licenseKey,
         userName: data.userName,
         groupName: data.groupName,
         expiresAt: data.expiresAt,
+        apiKey: data.apiKey || null,
         validatedAt: Date.now(),
         cachedAt: Date.now()
       };
@@ -71,7 +72,7 @@ async function validateLicenseWithVPS(licenseKey) {
       await chrome.storage.local.set({ licenseValid: true, licenseError: null });
 
       console.log('[License] Validated OK:', data.userName);
-      return { valid: true, userName: data.userName, groupName: data.groupName, expiresAt: data.expiresAt };
+      return { valid: true, userName: data.userName, groupName: data.groupName, expiresAt: data.expiresAt, apiKey: data.apiKey || null };
     } else {
       // Mark license as INVALID globally
       await chrome.storage.local.set({ licenseValid: false, licenseError: data.error || 'License khong hop le' });
@@ -149,6 +150,7 @@ async function getCachedLicense() {
       userName: cache.userName,
       groupName: cache.groupName,
       expiresAt: cache.expiresAt,
+      apiKey: cache.apiKey || null,
       validatedAt: cache.validatedAt,
       cachedAt: cache.cachedAt
     };

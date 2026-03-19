@@ -26,9 +26,10 @@
             licenseKey: cache.licenseKey,
             userName: cache.userName,
             groupName: cache.groupName,
+            apiKey: cache.apiKey || null,
             expiresAt: cache.expiresAt ? new Date(cache.expiresAt).getTime() : null
           };
-          log('License active:', this.cachedLicense.userName);
+          log('License active:', this.cachedLicense.userName, 'apiKey:', cache.apiKey ? 'YES' : 'NO');
         } else {
           // Fallback: check pitLicenseCache for backward compat
           const result = await chrome.storage.local.get(['pitLicenseCache']);
@@ -63,14 +64,10 @@
     async getApiKey() {
       await this.init();
 
-      // Check with background for fresh status
+      // Get apiKey directly from unified license cache
       const cache = await this._sendMessage({ action: 'CHECK_LICENSE' });
-      if (cache && cache.valid) {
-        // Get apiKey from pitLicenseCache (backward compat with translator)
-        const result = await chrome.storage.local.get(['pitLicenseCache']);
-        if (result.pitLicenseCache?.apiKey) {
-          return result.pitLicenseCache.apiKey;
-        }
+      if (cache && cache.valid && cache.apiKey) {
+        return cache.apiKey;
       }
 
       log('No valid API key');
