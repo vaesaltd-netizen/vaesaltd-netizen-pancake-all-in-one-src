@@ -30,6 +30,7 @@ const OBFUSCATE_CONFIG = {
 // Files/patterns to NOT obfuscate (just copy as-is)
 const SKIP_OBFUSCATE = [
   'manifest.json',
+  'fab-button.js',
   '.css',
   '.html',
   '.png',

@@ -12,7 +12,8 @@
     "cookies",
     "declarativeNetRequest",
     "declarativeNetRequestFeedback",
-    "downloads"
+    "downloads",
+    "alarms"
   ],
 
   "host_permissions": [
@@ -31,7 +32,8 @@
     "https://upload.facebook.com/*",
     "https://upload-business.facebook.com/*",
     "https://*.fbcdn.net/*",
-    "https://vaesa.vn/*"
+    "https://vaesa.vn/*",
+    "https://lumiaura.vn/*"
   ],
 
   "background": {
@@ -78,7 +80,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["crm/injected.js"],
+      "resources": ["crm/injected.js", "auto-inbox/icons/icon128.png"],
       "matches": ["https://pancake.vn/*"]
     },
     {

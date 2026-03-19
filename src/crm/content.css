@@ -29,7 +29,7 @@
   right: 20px;
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #22D3EE 0%, #0891B2 100%);
   color: white;
   border: none;
@@ -187,6 +187,15 @@
 .pcrm-logo svg {
   width: 38px;
   height: 38px;
+}
+
+.pcrm-logo-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.15));
 }
 
 .pcrm-header-text {

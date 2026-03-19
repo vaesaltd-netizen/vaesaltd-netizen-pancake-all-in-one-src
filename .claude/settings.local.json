@@ -27,7 +27,11 @@
       "Bash(node -c background.js)",
       "Bash(node -c popup/popup.js)",
       "Bash(node -c auto-inbox/js/content-inject.js)",
-      "Bash(node -e \"JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(''''src/manifest.json'''',''''utf8''''\\)\\); console.log\\(''''manifest OK''''\\)\")"
+      "Bash(node -e \"JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(''''src/manifest.json'''',''''utf8''''\\)\\); console.log\\(''''manifest OK''''\\)\")",
+      "Bash(node -e \"const m = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''manifest.json'',''utf8''\\)\\); console.log\\(JSON.stringify\\(m.content_scripts, null, 2\\)\\)\")",
+      "Bash(node -e \"const m = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''dist/manifest.json'',''utf8''\\)\\); const fb = m.content_scripts.find\\(c => c.js && c.js.some\\(j => j.includes\\(''fab-button''\\)\\)\\); console.log\\(fb ? ''fab-button in dist manifest: OK'' : ''MISSING in dist manifest''\\)\")",
+      "Bash(ls \"C:\\\\Users\\\\Trung Nguyen\\\\Desktop\\\\Extension\\\\pancake-all-in-one\\\\src\\\\shared\"\" 2>/dev/null || echo \"Directory does not exist \")",
+      "Bash(npm run:*)"
     ]
   }
 }

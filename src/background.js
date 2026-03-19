@@ -3,6 +3,9 @@
  * Handles API calls for CRM, Translator, and Auto Inbox
  */
 
+// Import unified license service
+importScripts('shared/license.js');
+
 // Configuration
 const CONFIG = {
   // Google Sheet API for ads mapping
@@ -244,6 +247,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     pancakePost(request.payload).then(sendResponse);
     return true;
   }
+
+  // ==================== License Handlers ====================
+  if (request.action === 'VALIDATE_LICENSE') {
+    validateLicenseWithVPS(request.licenseKey).then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'CHECK_LICENSE') {
+    getCachedLicense().then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'CLEAR_LICENSE') {
+    clearLicense().then(() => sendResponse({ success: true }));
+    return true;
+  }
+
+  if (request.action === 'GET_LICENSE_STATUS') {
+    getCachedLicense().then(sendResponse);
+    return true;
+  }
 });
 
 // Preload ads mapping when service worker starts
@@ -251,6 +275,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const fromCache = await loadAdsMappingFromStorage();
   if (!fromCache) fetchAllAdsMapping();
 })();
+
+// Initialize license system on startup
+initLicense();
+
+// Handle license auto-refresh alarm
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === LICENSE_CONFIG.REFRESH_ALARM) {
+    handleLicenseAlarm();
+  }
+});
+
+// Auto-inject fab button on Facebook tabs
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.url &&
+      (tab.url.includes('facebook.com') || tab.url.includes('business.facebook.com'))) {
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ['auto-inbox/js/fab-button.js']
+    }).catch(() => {}); // Silently ignore errors (e.g. restricted pages)
+  }
+});
 
 /**
  * Fetch dropdown settings from Vaesa ERP API

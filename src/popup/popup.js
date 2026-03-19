@@ -117,14 +117,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     showLicenseStatus('Dang lam moi...', 'loading');
 
     try {
-      const result = await chrome.storage.local.get(['pitLicenseCache']);
+      const cache = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'CHECK_LICENSE' }, resolve);
+      });
 
-      if (!result.pitLicenseCache?.licenseKey) {
+      if (!cache?.licenseKey) {
         showLicenseStatus('Chua co License Key', 'error');
         return;
       }
 
-      const validationResult = await validateLicenseWithServer(result.pitLicenseCache.licenseKey);
+      const validationResult = await validateLicenseWithServer(cache.licenseKey);
 
       if (validationResult.valid) {
         showLicenseStatus('Da lam moi thanh cong!', 'success');
@@ -141,8 +143,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Change license button
   changeLicenseBtn.addEventListener('click', async () => {
-    // Clear current license
-    await chrome.storage.local.remove(['pitLicenseCache']);
+    // Clear license via background
+    await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: 'CLEAR_LICENSE' }, resolve);
+    });
 
     // Show input row
     licenseInputRow.style.display = 'block';
@@ -262,10 +266,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function loadLicenseStatus() {
     try {
-      const result = await chrome.storage.local.get(['pitLicenseCache']);
-      const cache = result.pitLicenseCache;
+      // Ask background for license status
+      const cache = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'CHECK_LICENSE' }, resolve);
+      });
 
-      if (cache && cache.expiresAt > Date.now()) {
+      if (cache && cache.valid) {
         // Show active status
         licenseInputRow.style.display = 'none';
         licenseStatusRow.style.display = 'block';
@@ -273,20 +279,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         licenseUserName.textContent = cache.userName || '-';
         licenseGroupName.textContent = cache.groupName || '-';
 
-        // Calculate remaining time
-        const remainingMs = cache.expiresAt - Date.now();
-        const hours = Math.floor(remainingMs / (60 * 60 * 1000));
-        const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
-        licenseRemaining.textContent = `${hours}h ${minutes}m`;
+        // Show expiry date or "Vinh vien"
+        if (cache.expiresAt) {
+          const expiryDate = new Date(cache.expiresAt);
+          const now = new Date();
+          const diffMs = expiryDate - now;
+          const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+          if (days > 30) {
+            licenseRemaining.textContent = expiryDate.toLocaleDateString('vi-VN');
+          } else if (days > 0) {
+            licenseRemaining.textContent = `${days} ngay`;
+          } else {
+            licenseRemaining.textContent = 'Het han';
+          }
+        } else {
+          licenseRemaining.textContent = 'Vinh vien';
+        }
 
       } else if (cache && cache.licenseKey) {
-        // License expired but exists - show input with pre-filled value
+        // License expired but exists
         licenseInputRow.style.display = 'block';
         licenseStatusRow.style.display = 'none';
         licenseKeyInput.value = cache.licenseKey;
         showLicenseStatus('License het han, vui long lam moi', 'error');
       } else {
-        // No license - show input form
+        // No license
         licenseInputRow.style.display = 'block';
         licenseStatusRow.style.display = 'none';
       }
@@ -295,39 +312,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Hardcoded Apps Script URL - VEASA production
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOTIWRx2wQhXS1aA3wT90Sg-OsgCbzoZqXhBCqXLq2vdJVRVmyhepGI9Obm-SMH08nrw/exec';
-
+  // Validate via background service worker (calls lumiaura.vn VPS)
   async function validateLicenseWithServer(license) {
-    const url = `${APPS_SCRIPT_URL}?action=validate&license=${encodeURIComponent(license)}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.valid) {
-      // Save to storage
-      await chrome.storage.local.set({
-        pitLicenseCache: {
-          licenseKey: license,
-          apiKey: data.apiKey,
-          userName: data.userName,
-          groupName: data.groupName,
-          expiresAt: data.expiresAt
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({ action: 'VALIDATE_LICENSE', licenseKey: license }, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
         }
+        resolve(response);
       });
-    }
-
-    return data;
+    });
   }
 
   function showLicenseStatus(message, type) {

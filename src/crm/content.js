@@ -136,7 +136,7 @@
     <button class="pcrm-close" aria-label="Đóng">×</button>
 
     <div class="pcrm-header">
-      <span class="pcrm-logo">${ICONS.logo}</span>
+      <img class="pcrm-logo-img" src="${chrome.runtime.getURL('auto-inbox/icons/icon128.png')}" alt="Vaesa">
       <div class="pcrm-header-text">
         <h2>Pancake To CRM</h2>
         <span class="pcrm-subtitle">Đồng bộ dữ liệu khách hàng</span>
@@ -358,7 +358,7 @@
     popup.style.bottom = '';
   }
 
-  // Click button: toggle popup (open/close)
+  // Click button: toggle popup (open/close) — with license check
   btn.addEventListener('click', async (e) => {
     if (btn.classList.contains('dragging')) return;
 
@@ -366,6 +366,25 @@
     if (popup.classList.contains('show') || popup.classList.contains('closing')) {
       closePopup();
       return;
+    }
+
+    // Check license before opening
+    try {
+      const licenseStatus = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'CHECK_LICENSE' }, resolve);
+      });
+
+      if (!licenseStatus || !licenseStatus.valid) {
+        // Show toast notification
+        const toast = document.createElement('div');
+        toast.textContent = 'Can nhap License Key. Mo popup extension de nhap.';
+        toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:2147483647;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+        return;
+      }
+    } catch (err) {
+      console.error('[CRM] License check error:', err);
     }
 
     // Position and show popup
