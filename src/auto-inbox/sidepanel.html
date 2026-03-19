@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vaesa Inbox Tools Free</title>
+  <meta name="version" content="2.2.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/sidepanel.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ===== HERO HEADER ===== -->
+    <header class="hero">
+      <div class="hero-bg"></div>
+      <button id="btn-close-panel" title="Đóng" style="position:absolute;top:8px;right:8px;z-index:10;background:rgba(255,255,255,0.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;line-height:1;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">&times;</button>
+      <div class="hero-content">
+        <img src="icons/icon128.png" class="hero-logo">
+        <div class="hero-text">
+          <h1 class="hero-title">Vaesa Inbox Tools</h1>
+          <p class="hero-sub">Quét & gửi tin nhắn hàng loạt trên Fanpage hoặc nick cá nhân · <span id="app-ver">v2.2.0</span></p>
+        </div>
+      </div>
+      <div class="hero-badge" id="fb-badge">
+        <span class="badge-dot"></span>
+        <span class="badge-text">Kiểm tra...</span>
+      </div>
+    </header>
+
+    <!-- ===== TAB BAR ===== -->
+    <nav class="tabbar">
+      <button class="tab active" data-tab="scan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+        Quét khách hàng
+      </button>
+      <button class="tab" data-tab="send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Gửi tin nhắn
+      </button>
+      <button class="tab" data-tab="templates">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Mẫu tin nhắn
+      </button>
+    </nav>
+
+    <!-- ===== MAIN SCROLL AREA ===== -->
+    <main class="main" id="main-content"></main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+      Phát triển bởi <a href="https://vaesa.vn" target="_blank">Vaesa.vn</a> · 100% chạy Offline trên trình duyệt
+      <div style="margin-top:4px"><a href="https://zalo.me/g/qxep3egmnda3brjedffd" target="_blank">Tham gia nhóm Zalo</a> để nhận bản cập nhật mới nhất</div>
+    </footer>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/fb-api.js"></script>
+  <script src="js/pancake-api.js"></script>
+  <script src="js/template-db.js"></script>
+  <script src="js/message-sender.js"></script>
+  <script src="js/sidepanel.js"></script>
+</body>
+</html>

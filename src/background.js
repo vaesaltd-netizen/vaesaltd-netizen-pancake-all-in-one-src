@@ -1,6 +1,6 @@
 /**
- * Pancake CRM Extension - Background Service Worker
- * Handles API calls to bypass CORS restrictions
+ * Pancake All-in-One Extension - Background Service Worker
+ * Handles API calls for CRM, Translator, and Auto Inbox
  */
 
 // Configuration
@@ -149,6 +149,99 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     contentMappingCache = null;
     chrome.storage.local.remove(CONTENT_CACHE_KEY);
     fetchContentMapping().then(sendResponse);
+    return true;
+  }
+
+  // ===== AUTO INBOX HANDLERS =====
+  if (request.action === 'OPEN_AUTO_INBOX') {
+    openAutoInboxPanel(sender.tab);
+    sendResponse({ success: true });
+    return false;
+  }
+
+  if (request.action === 'GET_FB_COOKIE') {
+    getFBCookie().then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'GET_PAGE_LIST') {
+    fetchBusinessInboxPage(request.payload.c_user, sendResponse, (count, isComplete) => {
+      if (sender.tab?.id) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          action: 'PAGE_LIST_PROGRESS',
+          payload: { count, isComplete }
+        }).catch(() => {});
+      }
+    });
+    return true;
+  }
+
+  if (request.action === 'GET_USER_INBOX') {
+    if (!inboxRequestConfig.fb_dtsg) {
+      console.log('[AutoInbox] requestConfig empty, loading first...');
+      const userId = request.payload.c_user || inboxRequestConfig.c_user;
+      if (userId) {
+        fetchBusinessInboxPage(userId, function (configResult) {
+          if (configResult && configResult.success) {
+            fetchUsersInbox(request.payload.page_id, request.payload.before_call || null, sendResponse);
+          } else {
+            sendResponse({ success: false, error: 'Cannot load Facebook config' });
+          }
+        });
+      } else {
+        getFBCookie().then(cookieResult => {
+          const cookieUserId = cookieResult && cookieResult.userId;
+          if (cookieUserId) {
+            fetchBusinessInboxPage(cookieUserId, function (configResult) {
+              if (configResult && configResult.success) {
+                fetchUsersInbox(request.payload.page_id, request.payload.before_call || null, sendResponse);
+              } else {
+                sendResponse({ success: false, error: 'Cannot load Facebook config' });
+              }
+            });
+          } else {
+            sendResponse({ success: false, error: 'No Facebook session' });
+          }
+        });
+      }
+    } else {
+      fetchUsersInbox(request.payload.page_id, request.payload.before_call || null, sendResponse);
+    }
+    return true;
+  }
+
+  if (request.action === 'GET_USER_INFO') {
+    fetchUserInfo(request.payload.c_user, sendResponse);
+    return true;
+  }
+
+  if (request.action === 'FETCH_IMAGE_BASE64') {
+    fetchImageToBase64(request.url).then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'SEND_MESSAGE') {
+    sendFBMessage(request.payload).then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'UPLOAD_MEDIA') {
+    uploadFBMedia(request.payload).then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'GET_PANCAKE_SESSION') {
+    getPancakeSession().then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'PANCAKE_REQUEST') {
+    pancakeGet(request.payload).then(sendResponse);
+    return true;
+  }
+
+  if (request.action === 'PANCAKE_POST') {
+    pancakePost(request.payload).then(sendResponse);
     return true;
   }
 });
@@ -627,4 +720,476 @@ async function sendToCRM(payload) {
     console.error('[Pancake CRM] sendToCRM error:', error);
     return { success: false, error: error.message };
   }
+}
+
+// =============================================================================
+// AUTO INBOX — Facebook Inbox scanning & bulk messaging
+// =============================================================================
+
+const INBOX_BUSINESS_API_URL = 'https://business.facebook.com';
+const INBOX_ORIGIN_API_URL = 'https://www.facebook.com';
+let inboxRequestConfig = {};
+
+/**
+ * Open Auto Inbox side panel by injecting content-inject.js into the active Facebook tab
+ */
+async function openAutoInboxPanel(senderTab) {
+  try {
+    // If triggered from a Facebook tab, use that tab
+    if (senderTab && senderTab.url && senderTab.url.includes('facebook.com')) {
+      await chrome.scripting.executeScript({
+        target: { tabId: senderTab.id },
+        files: ['auto-inbox/js/content-inject.js']
+      });
+      return;
+    }
+    // Otherwise find a Facebook tab or open one
+    const tabs = await chrome.tabs.query({ url: ['https://www.facebook.com/*', 'https://*.facebook.com/*'] });
+    if (tabs && tabs.length > 0) {
+      await chrome.tabs.update(tabs[0].id, { active: true });
+      await chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        files: ['auto-inbox/js/content-inject.js']
+      });
+    } else {
+      // Open Facebook first
+      const newTab = await chrome.tabs.create({ url: 'https://www.facebook.com/' });
+      // Wait for page to load before injecting
+      chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+        if (tabId === newTab.id && info.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          chrome.scripting.executeScript({
+            target: { tabId: newTab.id },
+            files: ['auto-inbox/js/content-inject.js']
+          }).catch(err => console.error('[AutoInbox] Inject error:', err));
+        }
+      });
+    }
+  } catch (err) {
+    console.error('[AutoInbox] openAutoInboxPanel error:', err);
+  }
+}
+
+/**
+ * Get Facebook c_user cookie
+ */
+async function getFBCookie() {
+  try {
+    if (chrome.cookies) {
+      try {
+        const cookie = await chrome.cookies.get({ url: 'https://www.facebook.com', name: 'c_user' });
+        if (cookie && cookie.value) {
+          return { userId: cookie.value };
+        }
+      } catch (err) {
+        console.log('[AutoInbox] chrome.cookies failed:', err.message);
+      }
+    }
+    try {
+      const tabs = await chrome.tabs.query({ url: ['https://www.facebook.com/*', 'https://*.facebook.com/*'] });
+      if (tabs && tabs.length > 0) {
+        const injectionResults = await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: function () {
+            var cookiesString = '; ' + document.cookie;
+            var parts = cookiesString.split('; c_user=');
+            if (parts.length === 2) {
+              return parts.pop().split(';').shift();
+            }
+            return null;
+          }
+        });
+        var userId = injectionResults && injectionResults[0] && injectionResults[0].result;
+        if (userId) {
+          return { userId: userId };
+        }
+      }
+    } catch (err) {
+      console.log('[AutoInbox] scripting fallback failed:', err.message);
+    }
+    return { userId: null, error: 'Chưa đăng nhập Facebook hoặc không tìm thấy tab Facebook.' };
+  } catch (error) {
+    return { userId: null, error: error.message };
+  }
+}
+
+/**
+ * Send Facebook message via /messaging/send
+ */
+async function sendFBMessage(payload) {
+  try {
+    const response = await fetch('https://www.facebook.com/messaging/send', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: payload.body
+    });
+    const responseText = await response.text();
+    const jsonResponse = JSON.parse(responseText.replace('for (;;);', ''));
+    const isSuccess = !jsonResponse.error && !!jsonResponse.payload;
+    if (!isSuccess) {
+      console.error('[AutoInbox] Send failed:', JSON.stringify(jsonResponse.error || jsonResponse.errorSummary || '').substring(0, 200));
+    }
+    return { success: isSuccess };
+  } catch (error) {
+    console.error('[AutoInbox] Send error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Upload media to Facebook
+ */
+async function uploadFBMedia(payload) {
+  try {
+    const formData = new FormData();
+    if (payload.files && payload.files.length > 0) {
+      for (let i = 0; i < payload.files.length; i++) {
+        const fileEntry = payload.files[i];
+        const binaryString = atob(fileEntry.data);
+        const uint8Array = new Uint8Array(binaryString.length);
+        for (let j = 0; j < binaryString.length; j++) {
+          uint8Array[j] = binaryString.charCodeAt(j);
+        }
+        const blob = new Blob([uint8Array], { type: fileEntry.type || 'image/jpeg' });
+        formData.append('upload_102' + i, blob, fileEntry.name || 'image' + i + '.jpg');
+      }
+    }
+    const response = await fetch(payload.url, { method: 'POST', body: formData });
+    const responseText = await response.text();
+    let jsonResponse;
+    try {
+      jsonResponse = JSON.parse(responseText.replace('for (;;);', ''));
+    } catch (err) {
+      return { success: false, error: 'JSON parse error' };
+    }
+    if (jsonResponse.error || !jsonResponse.payload || !jsonResponse.payload.metadata) {
+      return { success: false, error: jsonResponse.errorSummary || jsonResponse.error || 'Upload failed' };
+    }
+    const idsMap = {};
+    Object.keys(jsonResponse.payload.metadata).forEach(key => {
+      const metadata = jsonResponse.payload.metadata[key];
+      idsMap[key] = metadata.image_id || metadata.video_id || metadata.file_id || metadata.audio_id || metadata.fbid;
+    });
+    return { success: Object.keys(idsMap).length > 0, ids: idsMap };
+  } catch (error) {
+    console.error('[AutoInbox] Upload error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Fetch Facebook business inbox page to extract config (fb_dtsg, tokens, etc.)
+ */
+function fetchBusinessInboxPage(userId, callback, onProgress) {
+  fetch(INBOX_BUSINESS_API_URL + '/latest/inbox/all').then(response => {
+    if (!response.ok) throw new Error('Network error');
+    return response.text();
+  }).then(html => {
+    const dtsgMatches = html.match(/DTSGInitialData(.?)+IntlPhonologicalRules/gm);
+    const fb_dtsg = dtsgMatches[0].split('"')[4];
+    const iframeTokenMatches = html.match(/compat_iframe_token":"(.?)+",/gm);
+    const cquick_token = iframeTokenMatches[0].split('"')[2];
+    const hsiJson = '{' + html.match(/"hsi":"(.?)+__spin_t":\d+/gm)[0] + '}';
+    const hsiData = JSON.parse(hsiJson);
+    const queryMatches = html.match(/\\\/ajax\\\/qm\\\/(.*?)"/);
+    const queryParams = new URLSearchParams(queryMatches[1]);
+    let siteData = html.match(/\["SiteData",\[\],([^\]]+),\d+\]/)[1];
+    let lsdData = html.match(/\["LSD",\[\],([^\]]+),\d+\]/)[1];
+    let webConnectionData = html.match(/\["WebConnectionClassServerGuess",\[\],([^\]]+),\d+\]/)[1];
+    let asyncParamsData = html.match(/\["GetAsyncParamsExtraData",\[\],([^\]]+),\d+\]/)[1];
+    siteData = JSON.parse(siteData);
+    webConnectionData = JSON.parse(webConnectionData);
+    lsdData = JSON.parse(lsdData);
+    asyncParamsData = JSON.parse(asyncParamsData);
+    inboxRequestConfig = {
+      c_user: userId,
+      fb_dtsg: fb_dtsg,
+      cquick_token: cquick_token,
+      cquick: 'jsc_c_' + (Math.floor(6 * Math.random()) + 10).toString(36),
+      dpr: siteData.pr,
+      jazoest: queryParams.get('jazoest'),
+      lsd: lsdData.token,
+      usid: _inboxRnd(8) + ':' + _inboxRnd(14) + ':' + Math.floor(Math.random() * 11) + '-' + _inboxRnd(14) + '-RV=6:F=',
+      semr_host_bucket: siteData.semr_host_bucket,
+      bl_hash_version: siteData.bl_hash_version,
+      comet_env: siteData.comet_env,
+      compose_bootloads: siteData.compose_bootloads,
+      spin: siteData.spin,
+      wbloks_env: siteData.wbloks_env,
+      __a: +queryParams.get('__a'),
+      __comet_req: +queryParams.get('__comet_req'),
+      __aaid: asyncParamsData.extra_data.__aaid,
+      __ccg: webConnectionData.connectionClass,
+      __csr: _inboxRnd(60),
+      __dyn: _inboxRnd(44),
+      __hs: siteData.haste_session,
+      __hsi: siteData.hsi,
+      __pc: siteData.pkg_cohort,
+      __rev: siteData.server_revision,
+      __spin_b: siteData.__spin_b,
+      __spin_r: siteData.__spin_r,
+      ...hsiData
+    };
+    fetchPageList(callback, [], null, onProgress);
+  }).catch(error => callback({ success: false, error: error.message }));
+}
+
+/**
+ * Recursively fetch user's Facebook Pages via GraphQL
+ */
+function fetchPageList(callback, pages, cursor, onProgress) {
+  inboxRequestConfig.__req = _inboxReqId();
+  const isFirstPage = !cursor;
+  const variables = isFirstPage ? { scale: 1 } : { count: 50, cursor: cursor, scale: 1 };
+  const docId = isFirstPage ? '7608279105858845' : '29849393258040848';
+  const friendlyName = isFirstPage
+    ? 'PagesCometLaunchpointUnifiedQueryPagesListRedesignedQuery'
+    : 'PagesCometLaunchPointUnifiedQueryPagesListRedesignedUpdatedPagesSectionQuery';
+  const params = {
+    cquick_token: inboxRequestConfig.cquick_token,
+    fb_dtsg: inboxRequestConfig.fb_dtsg,
+    cquick: inboxRequestConfig.cquick,
+    __ccg: inboxRequestConfig.__ccg,
+    dpr: inboxRequestConfig.dpr,
+    jazoest: inboxRequestConfig.jazoest,
+    __csr: inboxRequestConfig.__csr,
+    __beoa: 0,
+    __req: inboxRequestConfig.__req,
+    __a: inboxRequestConfig.__a,
+    ctarget: 'https://www.facebook.com',
+    hsi: inboxRequestConfig.__hsi,
+    semr_host_bucket: inboxRequestConfig.semr_host_bucket,
+    bl_hash_version: inboxRequestConfig.bl_hash_version,
+    comet_env: inboxRequestConfig.comet_env,
+    wbloks_env: inboxRequestConfig.wbloks_env,
+    ef_page: 'BusinessCometBizSuiteInboxAllMessagesRoute',
+    compose_bootloads: inboxRequestConfig.compose_bootloads,
+    spin: inboxRequestConfig.spin,
+    __spin_r: inboxRequestConfig.__spin_r,
+    __spin_b: inboxRequestConfig.__spin_b,
+    __spin_t: Date.now(),
+    __hsi: inboxRequestConfig.__hsi,
+    av: inboxRequestConfig.c_user,
+    __user: inboxRequestConfig.c_user,
+    fb_api_caller_class: 'RelayModern',
+    server_timestamps: true,
+    fb_api_req_friendly_name: friendlyName,
+    variables: JSON.stringify(variables),
+    doc_id: docId
+  };
+  fetch(INBOX_ORIGIN_API_URL + '/api/graphql', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+    body: new URLSearchParams(params)
+  }).then(response => response.text()).then(responseText => {
+    let cleanText = responseText.replace('for (;;);', '');
+    let labelIndex = /\s\{"label":"/gm.exec(cleanText);
+    let jsonData = labelIndex ? JSON.parse(cleanText.substring(0, labelIndex.index)) : JSON.parse(cleanText);
+    const pagesData = jsonData.data?.viewer?.actor?.additional_profiles_with_biz_tools;
+    if (pagesData?.edges?.length > 0) {
+      pagesData.edges.forEach(edge => {
+        const delegatePageId = edge.node.delegate_page_id;
+        if (!pages.some(p => p.id === delegatePageId)) {
+          pages.push({
+            id: delegatePageId,
+            name: edge.node.name,
+            avatar: edge.node.profile_picture?.uri || ''
+          });
+        }
+      });
+      if (onProgress) onProgress(pages.length, !pagesData.page_info?.has_next_page);
+      if (pagesData.page_info?.has_next_page && pagesData.page_info?.end_cursor) {
+        fetchPageList(callback, pages, pagesData.page_info.end_cursor, onProgress);
+      } else {
+        callback({ success: true, data: pages, request_config: inboxRequestConfig });
+      }
+    } else {
+      if (pages.length > 0) {
+        callback({ success: true, data: pages, request_config: inboxRequestConfig });
+      } else {
+        callback({ success: false, error: 'No pages found' });
+      }
+    }
+  }).catch(error => {
+    if (pages.length > 0) {
+      callback({ success: true, data: pages, request_config: inboxRequestConfig });
+    } else {
+      callback({ success: false, error: error.message });
+    }
+  });
+}
+
+/**
+ * Fetch inbox conversations for a Facebook Page
+ */
+function fetchUsersInbox(pageId, cursor, callback) {
+  inboxRequestConfig.__req = _inboxReqId();
+  const params = {
+    batch_name: 'MessengerGraphQLThreadlistFetcher',
+    av: pageId,
+    queries: JSON.stringify({
+      __q0__: {
+        doc_id: '5947328892029037',
+        query_params: { limit: 50, before: cursor }
+      }
+    }),
+    cquick_token: inboxRequestConfig.cquick_token,
+    fb_dtsg: inboxRequestConfig.fb_dtsg,
+    cquick: inboxRequestConfig.cquick,
+    __ccg: inboxRequestConfig.__ccg,
+    dpr: inboxRequestConfig.dpr,
+    jazoest: inboxRequestConfig.jazoest,
+    __csr: inboxRequestConfig.__csr,
+    __beoa: 0,
+    __req: inboxRequestConfig.__req,
+    __a: inboxRequestConfig.__a,
+    ctarget: 'https://www.facebook.com',
+    hsi: inboxRequestConfig.__hsi,
+    semr_host_bucket: inboxRequestConfig.semr_host_bucket,
+    bl_hash_version: inboxRequestConfig.bl_hash_version,
+    comet_env: inboxRequestConfig.comet_env,
+    wbloks_env: inboxRequestConfig.wbloks_env,
+    ef_page: 'BusinessCometBizSuiteInboxAllMessagesRoute',
+    compose_bootloads: inboxRequestConfig.compose_bootloads,
+    spin: inboxRequestConfig.spin,
+    __spin_r: inboxRequestConfig.__spin_r,
+    __spin_b: inboxRequestConfig.__spin_b,
+    __spin_t: Math.floor(Date.now() / 1000),
+    __hsi: inboxRequestConfig.__hsi
+  };
+  fetch(INBOX_ORIGIN_API_URL + '/api/graphqlbatch/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+    body: new URLSearchParams(params)
+  }).then(response => {
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.text();
+  }).then(responseText => {
+    if (responseText.includes('"error":') && responseText.includes('"errorSummary"')) {
+      const errorSummaryMatch = responseText.match(/"errorSummary":\s*"([^"]+)"/);
+      callback({ success: false, error: { errorSummary: errorSummaryMatch ? errorSummaryMatch[1] : 'Unknown error' } });
+      return;
+    }
+    let cleanedResponse = responseText.replace('for (;;);', '').replace(/\{"successful_results":\d+,"error_results":\d+,"skipped_results":\d+\}$/, '').trim();
+    try {
+      const jsonResponse = JSON.parse(cleanedResponse);
+      callback({ success: true, data: jsonResponse });
+    } catch (error) {
+      callback({ success: false, error: 'JSON parse error: ' + error.message });
+    }
+  }).catch(error => {
+    callback({ success: false, error: error.message });
+  });
+}
+
+/**
+ * Fetch user profile info from Facebook
+ */
+function fetchUserInfo(userId, callback) {
+  fetch(INBOX_ORIGIN_API_URL + '/me').then(response => response.text()).then(html => {
+    let userName = 'Tài khoản cá nhân';
+    let avatarUrl = 'https://graph.facebook.com/' + userId + '/picture?type=normal';
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch?.[1]) {
+      const titleText = titleMatch[1].replace(/ \| Facebook.*$/i, '').trim();
+      if (titleText && titleText !== 'Facebook' && !titleText.includes('Đăng nhập')) {
+        userName = titleText;
+      }
+    }
+    const actorMatch = html.match(/"actorID":"(\d+)","name":"([^"]+)"/);
+    if (actorMatch?.[2]) userName = actorMatch[2];
+    const picMatch = html.match(/"profilePicLarge":\{"uri":"([^"]+)"/);
+    if (picMatch?.[1]) avatarUrl = picMatch[1].replace(/\\\//g, '/');
+    callback({ success: true, data: { id: userId, name: userName, avatar: avatarUrl } });
+  }).catch(() => callback({
+    success: true,
+    data: { id: userId, name: 'Tài khoản cá nhân', avatar: 'https://graph.facebook.com/' + userId + '/picture?type=normal' }
+  }));
+}
+
+/**
+ * Fetch image and convert to base64
+ */
+async function fetchImageToBase64(url) {
+  if (!url?.startsWith('http')) return { success: false };
+  try {
+    const response = await fetch(url, { redirect: 'follow' });
+    if (!response.ok || !response.headers.get('Content-Type')?.includes('image')) return { success: false };
+    const blob = await response.blob();
+    if (blob.size < 100) return { success: false };
+    const reader = new FileReader();
+    const base64 = await new Promise((resolve, reject) => {
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    return { success: true, base64, size: blob.size };
+  } catch {
+    return { success: false };
+  }
+}
+
+/**
+ * Get Pancake session token from cookie
+ */
+async function getPancakeSession() {
+  try {
+    if (chrome.cookies) {
+      const cookie = await chrome.cookies.get({ url: 'https://pancake.vn', name: 'jwt' });
+      if (cookie && cookie.value) return { token: cookie.value };
+    }
+    return { token: null };
+  } catch (e) {
+    return { token: null };
+  }
+}
+
+/**
+ * Pancake GET request proxy
+ */
+async function pancakeGet(payload) {
+  try {
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    if (payload.url.includes('pancake.vn') && payload.session_token) {
+      headers['Cookie'] = 'jwt=' + payload.session_token;
+    }
+    const response = await fetch(payload.url, { method: 'GET', headers });
+    if (!response.ok) return { error: 'HTTP ' + response.status, data: null };
+    const data = await response.json();
+    return { error: null, data };
+  } catch (e) {
+    return { error: e.message, data: null };
+  }
+}
+
+/**
+ * Pancake POST request proxy
+ */
+async function pancakePost(payload) {
+  try {
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    if (payload.url.includes('pancake.vn') && payload.session_token) {
+      headers['Cookie'] = 'jwt=' + payload.session_token;
+    }
+    const response = await fetch(payload.url, { method: 'POST', headers, body: payload.body });
+    const data = await response.json();
+    return { error: null, data };
+  } catch (e) {
+    return { error: e.message, data: null };
+  }
+}
+
+// Auto Inbox helper functions
+function _inboxRnd(length) {
+  const chars = 'abcdefghijklmnorstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
+
+function _inboxReqId() {
+  return '1' + (Math.floor(6 * Math.random()) + 10).toString(36);
 }

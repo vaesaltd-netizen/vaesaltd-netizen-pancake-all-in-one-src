@@ -1,0 +1,59 @@
+[
+  {
+    "id": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "origin", "operation": "set", "value": "https://www.facebook.com" },
+        { "header": "sec-fetch-site", "operation": "set", "value": "same-origin" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "https://www.facebook.com",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "origin", "operation": "set", "value": "https://business.facebook.com" },
+        { "header": "sec-fetch-site", "operation": "set", "value": "same-origin" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "https://business.facebook.com",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 3,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "origin", "operation": "set", "value": "https://business.facebook.com" },
+        { "header": "referer", "operation": "set", "value": "https://business.facebook.com" },
+        { "header": "sec-fetch-site", "operation": "set", "value": "same-origin" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "https://upload-business.facebook.com",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 4,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "origin", "operation": "set", "value": "https://www.facebook.com" },
+        { "header": "sec-fetch-site", "operation": "set", "value": "same-origin" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "https://upload.facebook.com",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  }
+]

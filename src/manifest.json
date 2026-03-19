@@ -1,12 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "Pancake All-in-One (CRM + Translator)",
-  "version": "1.0.0",
-  "description": "CRM + AI Translator cho Pancake.vn - VAESA Trading Co., Ltd",
+  "name": "Pancake All-in-One (CRM + Translator + Auto Inbox)",
+  "version": "1.1.0",
+  "description": "CRM + AI Translator + Auto Inbox cho Pancake.vn - VAESA Trading Co., Ltd",
 
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "tabs",
+    "scripting",
+    "cookies",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "downloads"
   ],
 
   "host_permissions": [
@@ -17,7 +23,15 @@
     "https://vaesa.soly.com.vn/*",
     "https://script.google.com/*",
     "https://vaesa-proxy.vaesa-ltd.workers.dev/*",
-    "https://api.openai.com/*"
+    "https://api.openai.com/*",
+    "https://*.facebook.com/*",
+    "https://facebook.com/*",
+    "*://mbasic.facebook.com/*",
+    "https://business.facebook.com/*",
+    "https://upload.facebook.com/*",
+    "https://upload-business.facebook.com/*",
+    "https://*.fbcdn.net/*",
+    "https://vaesa.vn/*"
   ],
 
   "background": {
@@ -66,8 +80,32 @@
         "https://pages.fm/*",
         "https://*.pages.fm/*"
       ]
+    },
+    {
+      "resources": [
+        "auto-inbox/sidepanel.html",
+        "auto-inbox/css/*",
+        "auto-inbox/js/*",
+        "auto-inbox/icons/*"
+      ],
+      "matches": [
+        "https://*.facebook.com/*",
+        "https://facebook.com/*",
+        "*://mbasic.facebook.com/*",
+        "https://business.facebook.com/*"
+      ]
     }
   ],
+
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "auto-inbox/rules.json"
+      }
+    ]
+  },
 
   "action": {
     "default_popup": "popup/popup.html",

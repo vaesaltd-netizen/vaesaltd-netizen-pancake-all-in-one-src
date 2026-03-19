@@ -566,4 +566,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // ==================== Auto Inbox ====================
+  const openAutoInboxBtn = document.getElementById('openAutoInbox');
+  if (openAutoInboxBtn) {
+    openAutoInboxBtn.addEventListener('click', async () => {
+      // Get the active tab and send message to background to open Auto Inbox
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      chrome.runtime.sendMessage({ action: 'OPEN_AUTO_INBOX' }, () => {
+        window.close(); // Close popup after triggering
+      });
+    });
+  }
 });
