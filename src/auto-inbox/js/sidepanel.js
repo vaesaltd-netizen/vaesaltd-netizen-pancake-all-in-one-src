@@ -729,10 +729,10 @@
             .filter(function (t) { return t != null; })
             .map(function (t) { return String(t.id != null ? t.id : t); });
 
-          var hasAllSource = sourceTagIds.every(function (id) {
+          var hasAnySource = sourceTagIds.some(function (id) {
             return convTagIds.indexOf(id) > -1;
           });
-          if (!hasAllSource) { skipNoTag++; continue; }
+          if (!hasAnySource) { skipNoTag++; continue; }
 
           if (excludeTagIds.length > 0) {
             var hasExclude = excludeTagIds.some(function (id) {
