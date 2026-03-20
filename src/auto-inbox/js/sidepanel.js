@@ -384,7 +384,7 @@
       };
     });
   }
-  var tagSelections = { source: [], remove: [], untag: [], add: [] };
+  var tagSelections = { source: [], remove: [], untag: [], add: [], error: [] };
 
   // Tạo multi-select dropdown cho tag — dùng chung cho cả 4 loại
   function initTagMultiSelect(prefix, placeholderText, selectionKey) {
