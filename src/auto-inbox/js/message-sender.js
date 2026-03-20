@@ -170,6 +170,8 @@ var VaesaSender = {
             };
             this.failureDetailList.push(failureInfo);
             this.onLog("error", name + " — Gửi thất bại");
+            // Gắn tag lỗi nếu có cấu hình
+            await this._handleErrorTags(currentCustomer, name);
           }
         }
       }
@@ -186,6 +188,8 @@ var VaesaSender = {
         };
         this.failureDetailList.push(failureInfo);
         this.onLog("error", name + " — " + error.message);
+        // Gắn tag lỗi nếu có cấu hình
+        await this._handleErrorTags(currentCustomer, name);
       }
     }
     this.currentIndex++;
@@ -264,6 +268,25 @@ var VaesaSender = {
       }
       self.onLog("info", name + " — Đã gỡ " + tagCfg.removeTagIds.length + " tag");
     }
+  },
+  async _handleErrorTags(customer, name) {
+    var tagCfg = this.pancakeTagConfig;
+    if (!tagCfg || !tagCfg.accessToken || !tagCfg.pageId) return;
+    if (!tagCfg.errorTagIds || tagCfg.errorTagIds.length === 0) return;
+    var convId = typeof customer === "object" ? customer.convId : VaesaUtils.getCustomerConvId(customer);
+    if (!convId) {
+      console.log("[Vaesa] Skip error tag: no convId for", name);
+      return;
+    }
+    var pageId = tagCfg.pageId;
+    var token = tagCfg.accessToken;
+    var self = this;
+    await new Promise(function (resolve) {
+      PancakeAPI.addTags(pageId, token, convId, tagCfg.errorTagIds, function () {
+        self.onLog("warn", name + " — Đã gắn tag lỗi");
+        resolve();
+      });
+    });
   },
   _sendMessage(uid, pageId, messageBody, attachmentIds) {
     return new Promise(resolve => {
