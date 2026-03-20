@@ -259,11 +259,9 @@ var VaesaAPI = {
             if (lastMessageTimestamp) {
               try {
                 var tsInt = parseInt(lastMessageTimestamp);
-                console.log("[VaesaAPI] DEBUG raw timestamp:", lastMessageTimestamp, "parsed:", tsInt, "digits:", String(tsInt).length, "name:", name);
                 // Facebook có thể trả microseconds (16+ chữ số) thay vì milliseconds (13 chữ số)
                 if (tsInt > 9999999999999) {
                   tsInt = Math.floor(tsInt / 1000);
-                  console.log("[VaesaAPI] DEBUG converted to ms:", tsInt);
                 }
                 var date = new Date(tsInt);
                 formattedTimestamp = date.toLocaleString("vi-VN", {
@@ -271,7 +269,6 @@ var VaesaAPI = {
                   day: "2-digit", month: "2-digit", year: "numeric",
                   hour12: false
                 });
-                console.log("[VaesaAPI] DEBUG formatted:", formattedTimestamp, "from tsInt:", tsInt, "date:", date.toString(), "name:", name);
               } catch (error) {
                 formattedTimestamp = lastMessageTimestamp;
               }
