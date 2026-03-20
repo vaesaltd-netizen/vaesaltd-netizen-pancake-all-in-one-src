@@ -648,8 +648,8 @@
       return;
     }
     // Lấy tag nguồn + bỏ tag đã chọn
-    var sourceTagIds = (tagSelections.source || []).map(function (t) { return t.id; });
-    var excludeTagIds = (tagSelections.remove || []).map(function (t) { return t.id; });
+    var sourceTagIds = (tagSelections.source || []).map(function (t) { return String(t.id); });
+    var excludeTagIds = (tagSelections.remove || []).map(function (t) { return String(t.id); });
     var pancakeToken = "";
     var tokenEl = getEl("p-pancake-token");
     if (tokenEl) pancakeToken = tokenEl.value.trim();
