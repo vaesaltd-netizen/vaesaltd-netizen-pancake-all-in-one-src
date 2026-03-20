@@ -2,7 +2,7 @@
 
 echo "=========================================="
 echo "  VAESA All-in-One Extension - Auto Update"
-echo "  (CRM + Translator)"
+echo "  (CRM + Translator + Auto Inbox)"
 echo "=========================================="
 echo ""
 echo "Dang tai ban moi nhat tu GitHub..."
@@ -71,6 +71,21 @@ mkdir -p "$SCRIPT_DIR/popup"
 cp -f "$EXTRACTED/popup/popup.html" "$SCRIPT_DIR/popup/popup.html"
 cp -f "$EXTRACTED/popup/popup.js" "$SCRIPT_DIR/popup/popup.js"
 cp -f "$EXTRACTED/popup/popup.css" "$SCRIPT_DIR/popup/popup.css"
+
+# === Shared (License) ===
+mkdir -p "$SCRIPT_DIR/shared"
+cp -f "$EXTRACTED/shared/"*.js "$SCRIPT_DIR/shared/" 2>/dev/null
+
+# === Auto Inbox module ===
+mkdir -p "$SCRIPT_DIR/auto-inbox/js"
+mkdir -p "$SCRIPT_DIR/auto-inbox/css"
+mkdir -p "$SCRIPT_DIR/auto-inbox/icons"
+
+cp -f "$EXTRACTED/auto-inbox/js/"*.js "$SCRIPT_DIR/auto-inbox/js/" 2>/dev/null
+cp -f "$EXTRACTED/auto-inbox/css/"*.css "$SCRIPT_DIR/auto-inbox/css/" 2>/dev/null
+cp -f "$EXTRACTED/auto-inbox/icons/"* "$SCRIPT_DIR/auto-inbox/icons/" 2>/dev/null
+cp -f "$EXTRACTED/auto-inbox/sidepanel.html" "$SCRIPT_DIR/auto-inbox/sidepanel.html" 2>/dev/null
+cp -f "$EXTRACTED/auto-inbox/rules.json" "$SCRIPT_DIR/auto-inbox/rules.json" 2>/dev/null
 
 # === Icons ===
 mkdir -p "$SCRIPT_DIR/assets"

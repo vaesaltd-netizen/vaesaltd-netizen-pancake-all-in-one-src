@@ -884,22 +884,54 @@
 
       // === Chạy song song ===
 
-      // 1. Pancake scan
-      PancakeAPI.getAllConversationsByTag(
-        appState.sel.id,
-        pancakeToken,
-        sourceTagIds[0],
-        { sinceDate: scanSince || null, untilDate: scanUntil || null, maxMonths: 24 },
-        function (total) { pancakeCount = total; updateProgress(); },
-        function () { return scanStopped; },
-        function (err, conversations) {
+      // 1. Pancake scan — quét TẤT CẢ sourceTagIds rồi merge (OR logic)
+      var allPancakeConvs = [];
+      var pancakeTagsDone = 0;
+      var totalPancakeTags = sourceTagIds.length;
+      var firstPancakeError = null;
+
+      function scanNextPancakeTag(tagIndex) {
+        if (tagIndex >= totalPancakeTags || scanStopped) {
+          // Đã quét hết tất cả tag → dedup theo conversation id
+          var seenConvIds = {};
+          var dedupConvs = [];
+          for (var i = 0; i < allPancakeConvs.length; i++) {
+            var convId = String(allPancakeConvs[i].id || allPancakeConvs[i].conversation_id || i);
+            if (!seenConvIds[convId]) {
+              seenConvIds[convId] = true;
+              dedupConvs.push(allPancakeConvs[i]);
+            }
+          }
+          console.log("[Vaesa] Pancake: quét " + totalPancakeTags + " tag, tổng " + allPancakeConvs.length + " conv, sau dedup: " + dedupConvs.length);
           pancakeDone = true;
-          pancakeError = err;
-          pancakeResult = conversations;
+          pancakeError = firstPancakeError;
+          pancakeResult = dedupConvs;
           updateProgress();
           tryMerge();
+          return;
         }
-      );
+
+        PancakeAPI.getAllConversationsByTag(
+          appState.sel.id,
+          pancakeToken,
+          sourceTagIds[tagIndex],
+          { sinceDate: scanSince || null, untilDate: scanUntil || null, maxMonths: 24 },
+          function (total) { pancakeCount = allPancakeConvs.length + total; updateProgress(); },
+          function () { return scanStopped; },
+          function (err, conversations) {
+            if (err && !firstPancakeError) firstPancakeError = err;
+            if (conversations && conversations.length > 0) {
+              allPancakeConvs = allPancakeConvs.concat(conversations);
+              pancakeCount = allPancakeConvs.length;
+              updateProgress();
+            }
+            pancakeTagsDone++;
+            scanNextPancakeTag(tagIndex + 1);
+          }
+        );
+      }
+
+      scanNextPancakeTag(0);
 
       // 2. Facebook scan (chạy đồng thời)
       VaesaAPI.scanInboxCustomers(
