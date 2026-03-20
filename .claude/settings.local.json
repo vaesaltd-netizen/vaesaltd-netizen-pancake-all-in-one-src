@@ -31,7 +31,13 @@
       "Bash(node -e \"const m = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''manifest.json'',''utf8''\\)\\); console.log\\(JSON.stringify\\(m.content_scripts, null, 2\\)\\)\")",
       "Bash(node -e \"const m = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''dist/manifest.json'',''utf8''\\)\\); const fb = m.content_scripts.find\\(c => c.js && c.js.some\\(j => j.includes\\(''fab-button''\\)\\)\\); console.log\\(fb ? ''fab-button in dist manifest: OK'' : ''MISSING in dist manifest''\\)\")",
       "Bash(ls \"C:\\\\Users\\\\Trung Nguyen\\\\Desktop\\\\Extension\\\\pancake-all-in-one\\\\src\\\\shared\"\" 2>/dev/null || echo \"Directory does not exist \")",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(find '/c/Users/Trung Nguyen/.claude' -type d -name meta-ads*)",
+      "Read(//c/Users/**)",
+      "Read(//c/Users/Trung Nguyen/Downloads//**)",
+      "Bash(xxd \"/c/Users/Trung Nguyen/Downloads/meta-ads-analyzer-mod-by-noti.skill\")",
+      "Bash(mkdir -p \"/c/Users/Trung Nguyen/Desktop/Extension/pancake-all-in-one/.claude/skills\")",
+      "Bash(unzip \"/c/Users/Trung Nguyen/Downloads/meta-ads-analyzer-mod-by-noti.skill\")"
     ]
   }
 }

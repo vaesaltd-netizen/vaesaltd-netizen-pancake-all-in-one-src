@@ -10,11 +10,28 @@
 const LICENSE_CONFIG = {
   API_URL: 'https://lumiaura.vn/api/license/validate',
   CACHE_KEY: 'vaesa_unified_license',
+  DEVICE_ID_KEY: 'vaesa_device_id',
   CACHE_DURATION: 4 * 60 * 60 * 1000,  // 4 hours auto-refresh
   MAX_OFFLINE: 24 * 60 * 60 * 1000,    // 24 hours max offline
   LICENSE_PATTERN: /^VEASA-[A-Z0-9]{3}-[A-Z0-9]{3}$/,
   REFRESH_ALARM: 'LICENSE_AUTO_REFRESH'
 };
+
+/**
+ * Get or create unique device ID for this Chrome profile
+ * Persists in chrome.storage.local — one per machine/profile
+ */
+async function getDeviceId() {
+  const result = await chrome.storage.local.get(LICENSE_CONFIG.DEVICE_ID_KEY);
+  if (result[LICENSE_CONFIG.DEVICE_ID_KEY]) {
+    return result[LICENSE_CONFIG.DEVICE_ID_KEY];
+  }
+  // Generate new UUID
+  const deviceId = 'dev-' + crypto.randomUUID();
+  await chrome.storage.local.set({ [LICENSE_CONFIG.DEVICE_ID_KEY]: deviceId });
+  console.log('[License] New device ID created:', deviceId.substring(0, 12) + '...');
+  return deviceId;
+}
 
 /**
  * Validate license key with VPS server
@@ -28,10 +45,11 @@ async function validateLicenseWithVPS(licenseKey) {
   }
 
   try {
+    const deviceId = await getDeviceId();
     const response = await fetch(LICENSE_CONFIG.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ licenseKey })
+      body: JSON.stringify({ licenseKey, deviceId })
     });
 
     if (!response.ok) {
