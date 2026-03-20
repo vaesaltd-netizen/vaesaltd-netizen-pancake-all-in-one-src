@@ -396,6 +396,8 @@
     tagSelections[selectionKey] = [];
 
     function updateChips() {
+      if (!chips || !placeholder) return;
+      if (!tagSelections[selectionKey]) tagSelections[selectionKey] = [];
       var sel = tagSelections[selectionKey];
       if (sel.length === 0) {
         chips.innerHTML = "";
@@ -423,6 +425,8 @@
     }
 
     function populateDropdown(tags) {
+      if (!dropdown) { console.warn("[Vaesa] dropdown not found for prefix:", prefix); return; }
+      if (!tagSelections[selectionKey]) tagSelections[selectionKey] = [];
       dropdown.innerHTML = tags.map(function (tag) {
         var checked = tagSelections[selectionKey].find(function (t) { return t.id === tag.id; }) ? " checked" : "";
         return '<label class="tag-item" data-id="' + tag.id + '">' +
