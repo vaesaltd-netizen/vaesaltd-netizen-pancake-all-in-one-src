@@ -1,0 +1,136 @@
+{
+  "manifest_version": 3,
+  "name": "Pancake All-in-One (CRM + Translator + Auto Inbox)",
+  "version": "1.1.0",
+  "description": "CRM + AI Translator + Auto Inbox cho Pancake.vn - VAESA Trading Co., Ltd",
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "scripting",
+    "cookies",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "downloads",
+    "alarms"
+  ],
+
+  "host_permissions": [
+    "https://pancake.vn/*",
+    "https://*.pancake.vn/*",
+    "https://pages.fm/*",
+    "https://*.pages.fm/*",
+    "https://vaesa.soly.com.vn/*",
+    "https://script.google.com/*",
+    "https://vaesa-proxy.vaesa-ltd.workers.dev/*",
+    "https://api.openai.com/*",
+    "https://*.facebook.com/*",
+    "https://facebook.com/*",
+    "*://mbasic.facebook.com/*",
+    "https://business.facebook.com/*",
+    "https://upload.facebook.com/*",
+    "https://upload-business.facebook.com/*",
+    "https://*.fbcdn.net/*",
+    "https://vaesa.vn/*",
+    "https://lumiaura.vn/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://pancake.vn/*"],
+      "js": ["crm/content.js"],
+      "css": ["crm/content.css"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.facebook.com/*",
+        "https://facebook.com/*",
+        "https://business.facebook.com/*"
+      ],
+      "js": ["auto-inbox/js/fab-button.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://pancake.vn/*",
+        "https://*.pancake.vn/*",
+        "https://pages.fm/*",
+        "https://*.pages.fm/*"
+      ],
+      "js": [
+        "translator/lib/license-service.js",
+        "translator/lib/language-detector.js",
+        "translator/lib/language-worker-client.js",
+        "translator/lib/openai-translator.js",
+        "translator/content-scripts/inline-translator.js",
+        "translator/content-scripts/inline-toolbar.js"
+      ],
+      "css": [
+        "translator/styles/inline.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["crm/injected.js", "auto-inbox/icons/icon128.png"],
+      "matches": ["https://pancake.vn/*"]
+    },
+    {
+      "resources": ["translator/lib/language-worker.js"],
+      "matches": [
+        "https://pancake.vn/*",
+        "https://*.pancake.vn/*",
+        "https://pages.fm/*",
+        "https://*.pages.fm/*"
+      ]
+    },
+    {
+      "resources": [
+        "auto-inbox/sidepanel.html",
+        "auto-inbox/css/*",
+        "auto-inbox/js/*",
+        "auto-inbox/icons/*"
+      ],
+      "matches": [
+        "https://*.facebook.com/*",
+        "https://facebook.com/*",
+        "*://mbasic.facebook.com/*",
+        "https://business.facebook.com/*"
+      ]
+    }
+  ],
+
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "auto-inbox/rules.json"
+      }
+    ]
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    },
+    "default_title": "Pancake All-in-One Settings"
+  },
+
+  "icons": {
+    "16": "assets/icon-16.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  }
+}

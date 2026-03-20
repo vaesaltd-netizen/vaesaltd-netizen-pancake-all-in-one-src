@@ -207,6 +207,8 @@ var VaesaAPI = {
               continue;
             }
             var updatedTime = thread.updated_time_precise ? parseInt(thread.updated_time_precise) : 0;
+            // Chuyển microseconds → milliseconds nếu cần
+            if (updatedTime > 9999999999999) updatedTime = Math.floor(updatedTime / 1000);
             if (minTimestamp > 0 && updatedTime > 0 && updatedTime < minTimestamp) {
               console.log("[VaesaAPI] Thread timestamp " + updatedTime + " < minTs " + minTimestamp + ", stopping scan");
               isStoppedByTimeFilter = true;
@@ -247,6 +249,8 @@ var VaesaAPI = {
             }
             if (maxTimestamp < Infinity && lastMessageTimestamp) {
               var lastMessageTsInt = parseInt(lastMessageTimestamp);
+              // Chuyển microseconds → milliseconds nếu cần
+              if (lastMessageTsInt > 9999999999999) lastMessageTsInt = Math.floor(lastMessageTsInt / 1000);
               if (lastMessageTsInt > maxTimestamp) {
                 continue;
               }
@@ -254,7 +258,12 @@ var VaesaAPI = {
             var formattedTimestamp = "";
             if (lastMessageTimestamp) {
               try {
-                var date = new Date(parseInt(lastMessageTimestamp));
+                var tsInt = parseInt(lastMessageTimestamp);
+                // Facebook có thể trả microseconds (16+ chữ số) thay vì milliseconds (13 chữ số)
+                if (tsInt > 9999999999999) {
+                  tsInt = Math.floor(tsInt / 1000);
+                }
+                var date = new Date(tsInt);
                 formattedTimestamp = date.toLocaleString("vi-VN", {
                   hour: "2-digit", minute: "2-digit",
                   day: "2-digit", month: "2-digit", year: "numeric",
