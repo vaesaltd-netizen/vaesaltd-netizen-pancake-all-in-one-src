@@ -1039,12 +1039,20 @@
         function () { return scanStopped; },
         function (err, conversations) {
           if (!err && conversations) {
+            var matchCount = 0;
             for (var i = 0; i < conversations.length; i++) {
               var conv = conversations[i];
+
+              // Client-side filter: chỉ lấy conv THỰC SỰ có tag này
+              var convTagIds = (conv.tags || [])
+                .filter(function (t) { return t != null; })
+                .map(function (t) { return String(t.id != null ? t.id : t); });
+              if (convTagIds.indexOf(tagId) === -1) continue; // Không có tag này → skip
+
+              matchCount++;
               // Pancake API trả from.id (PSID) và from.name
               var fromObj = conv.from || {};
               var customer = conv.customers && conv.customers[0];
-              // Lưu tất cả identifier có thể
               if (fromObj.id) excludeIds["psid:" + String(fromObj.id)] = true;
               if (fromObj.name) excludeIds["name:" + fromObj.name.toLowerCase().trim()] = true;
               if (customer) {
@@ -1053,12 +1061,11 @@
                 var name = customer.name || "";
                 if (name) excludeIds["name:" + name.toLowerCase().trim()] = true;
               }
-              // Fallback từ conversation level
               if (conv.customer_id) excludeIds["psid:" + String(conv.customer_id)] = true;
               var convName = conv.customer_name || conv.name || "";
               if (convName) excludeIds["name:" + convName.toLowerCase().trim()] = true;
             }
-            console.log("[Vaesa] Exclude tag " + tagId + ": " + conversations.length + " conv, total exclude keys: " + Object.keys(excludeIds).length);
+            console.log("[Vaesa] Exclude tag " + tagId + ": " + conversations.length + " conv từ API, " + matchCount + " thực sự có tag, total exclude keys: " + Object.keys(excludeIds).length);
           }
           tagsProcessed++;
           processNextTag();
