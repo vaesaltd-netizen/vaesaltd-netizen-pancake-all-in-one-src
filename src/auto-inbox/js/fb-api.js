@@ -271,6 +271,7 @@ var VaesaAPI = {
                   day: "2-digit", month: "2-digit", year: "numeric",
                   hour12: false
                 });
+                console.log("[VaesaAPI] DEBUG formatted:", formattedTimestamp, "from tsInt:", tsInt, "date:", date.toString(), "name:", name);
               } catch (error) {
                 formattedTimestamp = lastMessageTimestamp;
               }
