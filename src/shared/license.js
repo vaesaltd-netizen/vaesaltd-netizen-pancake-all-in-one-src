@@ -26,10 +26,36 @@ async function getDeviceId() {
   if (result[LICENSE_CONFIG.DEVICE_ID_KEY]) {
     return result[LICENSE_CONFIG.DEVICE_ID_KEY];
   }
-  // Generate new UUID
-  const deviceId = 'dev-' + crypto.randomUUID();
+
+  // Tạo ID ổn định từ Chrome profile (không đổi dù xóa cài lại extension)
+  let deviceId;
+  try {
+    const info = await new Promise((resolve, reject) => {
+      chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, (res) => {
+        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+        else resolve(res);
+      });
+    });
+
+    if (info && info.id) {
+      // Hash Chrome profile ID → luôn giống nhau cho cùng 1 profile
+      const encoder = new TextEncoder();
+      const data = encoder.encode('veasa-device-' + info.id);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      deviceId = 'dev-' + hashArray.slice(0, 6).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch (e) {
+    console.warn('[License] chrome.identity not available:', e);
+  }
+
+  // Fallback nếu Chrome chưa đăng nhập Google
+  if (!deviceId) {
+    deviceId = 'dev-' + crypto.randomUUID().slice(0, 12);
+  }
+
   await chrome.storage.local.set({ [LICENSE_CONFIG.DEVICE_ID_KEY]: deviceId });
-  console.log('[License] New device ID created:', deviceId.substring(0, 12) + '...');
+  console.log('[License] Device ID created:', deviceId);
   return deviceId;
 }
 

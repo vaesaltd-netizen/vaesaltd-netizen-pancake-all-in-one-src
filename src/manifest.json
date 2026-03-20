@@ -13,7 +13,8 @@
     "declarativeNetRequest",
     "declarativeNetRequestFeedback",
     "downloads",
-    "alarms"
+    "alarms",
+    "identity"
   ],
 
   "host_permissions": [
