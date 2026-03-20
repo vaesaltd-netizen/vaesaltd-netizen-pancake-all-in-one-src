@@ -179,22 +179,17 @@ var PancakeAPI = (function () {
     });
   }
 
-  // Thêm tag vào conversation
+  // Thêm tag vào conversation (có retry)
   function addTags(pageId, accessToken, conversationId, tagIds, callback) {
     getSessionToken(function (sessionToken) {
       var index = 0;
       function addNext() {
         if (index >= tagIds.length) return callback(null);
-        var url = BASE_URL + "/pages/" + pageId + "/conversations/" + conversationId +
-          "/tags?access_token=" + accessToken;
-        chrome.runtime.sendMessage({
-          action: "PANCAKE_POST",
-          payload: {
-            url: url,
-            session_token: sessionToken,
-            body: JSON.stringify({ action: "add", tag_id: String(tagIds[index]) })
+        var tagId = tagIds[index];
+        addSingleTag(pageId, accessToken, conversationId, tagId, sessionToken, 0, function (err) {
+          if (err) {
+            console.warn("[PancakeAPI] addTag failed after retries, tagId:", tagId, "err:", err);
           }
-        }, function (res) {
           index++;
           addNext();
         });
@@ -203,21 +198,56 @@ var PancakeAPI = (function () {
     });
   }
 
-  // Gỡ tag khỏi conversation
+  function addSingleTag(pageId, accessToken, conversationId, tagId, sessionToken, attempt, callback) {
+    var maxRetries = 2;
+    var url = BASE_URL + "/pages/" + pageId + "/conversations/" + conversationId +
+      "/tags?access_token=" + accessToken;
+    chrome.runtime.sendMessage({
+      action: "PANCAKE_POST",
+      payload: {
+        url: url,
+        session_token: sessionToken,
+        body: JSON.stringify({ action: "add", tag_id: String(tagId) })
+      }
+    }, function (res) {
+      if (res && res.error && attempt < maxRetries) {
+        console.log("[PancakeAPI] addTag retry " + (attempt + 1) + " for tagId:", tagId);
+        setTimeout(function () {
+          addSingleTag(pageId, accessToken, conversationId, tagId, sessionToken, attempt + 1, callback);
+        }, 2000);
+      } else {
+        callback(res && res.error ? res.error : null);
+      }
+    });
+  }
+
+  // Gỡ tag khỏi conversation (có retry)
   function removeTag(pageId, accessToken, conversationId, tagId, callback) {
     getSessionToken(function (sessionToken) {
-      var url = BASE_URL + "/pages/" + pageId + "/conversations/" + conversationId +
-        "/tags?access_token=" + accessToken;
-      chrome.runtime.sendMessage({
-        action: "PANCAKE_POST",
-        payload: {
-          url: url,
-          session_token: sessionToken,
-          body: JSON.stringify({ action: "remove", tag_id: String(tagId) })
-        }
-      }, function (res) {
+      removeSingleTag(pageId, accessToken, conversationId, tagId, sessionToken, 0, callback);
+    });
+  }
+
+  function removeSingleTag(pageId, accessToken, conversationId, tagId, sessionToken, attempt, callback) {
+    var maxRetries = 2;
+    var url = BASE_URL + "/pages/" + pageId + "/conversations/" + conversationId +
+      "/tags?access_token=" + accessToken;
+    chrome.runtime.sendMessage({
+      action: "PANCAKE_POST",
+      payload: {
+        url: url,
+        session_token: sessionToken,
+        body: JSON.stringify({ action: "remove", tag_id: String(tagId) })
+      }
+    }, function (res) {
+      if (res && res.error && attempt < maxRetries) {
+        console.log("[PancakeAPI] removeTag retry " + (attempt + 1) + " for tagId:", tagId);
+        setTimeout(function () {
+          removeSingleTag(pageId, accessToken, conversationId, tagId, sessionToken, attempt + 1, callback);
+        }, 2000);
+      } else {
         callback(res && res.error ? res.error : null);
-      });
+      }
     });
   }
 
