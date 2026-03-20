@@ -979,13 +979,18 @@
           VaesaUtils.formatNumber(scanCount) + " khách hàng đã quét...";
       },
       function (result) {
+        var fbTotal = (result && result.customers) ? result.customers.length : 0;
+        console.log("[Vaesa] DEBUG: 1. Facebook quét được (Lọc tag trống): " + fbTotal + " khách");
         // Nếu có tag loại trừ → lọc bằng Pancake API
         if (excludeTagIds.length > 0 && pancakeToken && result.customers && result.customers.length > 0) {
           getEl("p-txt").textContent = "Đang lọc tag loại trừ...";
           filterByExcludeTags(result, excludeTagIds, pancakeToken, function (filteredResult) {
+            var afterExclude = (filteredResult && filteredResult.customers) ? filteredResult.customers.length : 0;
+            console.log("[Vaesa] DEBUG: 2. Sau loại trừ tag: " + afterExclude + " khách (loại " + (fbTotal - afterExclude) + " khách)");
             handleScanResult(filteredResult);
           });
         } else {
+          console.log("[Vaesa] DEBUG: 2. Không có tag loại trừ hoặc không có pancakeToken, giữ nguyên " + fbTotal + " khách");
           handleScanResult(result);
         }
       },
@@ -998,7 +1003,7 @@
   function filterByExcludeTags(result, excludeTagIds, pancakeToken, callback) {
     if (!appState.sel) return callback(result);
 
-    var excludeNames = {};
+    var excludeIds = {}; // lưu cả name, psid, fb_id để match chính xác
     var tagsProcessed = 0;
     var totalTags = excludeTagIds.length;
 
@@ -1007,8 +1012,14 @@
         // Đã quét hết tag loại trừ → filter kết quả
         var before = result.customers.length;
         var filtered = result.customers.filter(function (c) {
+          // Check bằng UID (chính xác nhất)
+          if (c.uid && excludeIds["uid:" + String(c.uid)]) return false;
+          // Check bằng PSID
+          if (c.psid && excludeIds["psid:" + String(c.psid)]) return false;
+          // Fallback: check bằng tên (trường hợp không match UID/PSID)
           var nameLower = (c.name || "").toLowerCase().trim();
-          return !excludeNames[nameLower];
+          if (nameLower && excludeIds["name:" + nameLower]) return false;
+          return true;
         });
         console.log("[Vaesa] Loại trừ tag: " + before + " → " + filtered.length + " (loại " + (before - filtered.length) + " KH)");
         result.customers = filtered;
@@ -1030,12 +1041,24 @@
           if (!err && conversations) {
             for (var i = 0; i < conversations.length; i++) {
               var conv = conversations[i];
+              // Pancake API trả from.id (PSID) và from.name
+              var fromObj = conv.from || {};
               var customer = conv.customers && conv.customers[0];
-              var name = (customer && customer.name) || conv.customer_name || conv.name || "";
-              if (name) {
-                excludeNames[name.toLowerCase().trim()] = true;
+              // Lưu tất cả identifier có thể
+              if (fromObj.id) excludeIds["psid:" + String(fromObj.id)] = true;
+              if (fromObj.name) excludeIds["name:" + fromObj.name.toLowerCase().trim()] = true;
+              if (customer) {
+                if (customer.fb_id) excludeIds["uid:" + String(customer.fb_id)] = true;
+                if (customer.id) excludeIds["psid:" + String(customer.id)] = true;
+                var name = customer.name || "";
+                if (name) excludeIds["name:" + name.toLowerCase().trim()] = true;
               }
+              // Fallback từ conversation level
+              if (conv.customer_id) excludeIds["psid:" + String(conv.customer_id)] = true;
+              var convName = conv.customer_name || conv.name || "";
+              if (convName) excludeIds["name:" + convName.toLowerCase().trim()] = true;
             }
+            console.log("[Vaesa] Exclude tag " + tagId + ": " + conversations.length + " conv, total exclude keys: " + Object.keys(excludeIds).length);
           }
           tagsProcessed++;
           processNextTag();
