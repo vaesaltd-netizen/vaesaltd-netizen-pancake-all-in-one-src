@@ -129,7 +129,7 @@ var VaesaAPI = {
     };
     chrome.runtime.sendMessage(message, callback);
   },
-  scanInboxCustomers(pageId, limit, onProgress, callback, filters) {
+  scanInboxCustomers(pageId, limit, onProgress, callback, filters, checkStop) {
     this.allCustomers = [];
     var seenUids = new Set();
     var self = this;
@@ -137,6 +137,12 @@ var VaesaAPI = {
     var minTimestamp = filters && filters.minTimestamp ? filters.minTimestamp : 0;
     var maxTimestamp = filters && filters.maxTimestamp ? filters.maxTimestamp : Infinity;
     var fetchBatch = function (cursor) {
+      // Check stop trước mỗi batch
+      if (checkStop && checkStop()) {
+        console.log("[VaesaAPI] Scan stopped by user. Total:", self.allCustomers.length);
+        callback({ success: true, customers: self.allCustomers, stoppedByUser: true });
+        return;
+      }
       batchCount++;
       console.log("[VaesaAPI] Batch #" + batchCount + ", cursor:", cursor, "total so far:", self.allCustomers.length);
       var payload = {
