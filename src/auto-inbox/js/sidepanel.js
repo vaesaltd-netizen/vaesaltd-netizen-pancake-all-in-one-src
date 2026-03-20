@@ -816,11 +816,18 @@
           var realUid = nameToUid[pk.nameLower];
           if (realUid) {
             mappedCount++;
+            // Ưu tiên timestamp từ Facebook (chính xác hơn Pancake)
+            var fbMatch = null;
+            for (var fi = 0; fi < fbCustomers.length; fi++) {
+              if (fbCustomers[fi].uid === realUid) { fbMatch = fbCustomers[fi]; break; }
+            }
+            var useTimestamp = (fbMatch && fbMatch.timestamp) ? fbMatch.timestamp : pk.timestamp;
+            var useRawTimestamp = (fbMatch && fbMatch.rawTimestamp) ? fbMatch.rawTimestamp : pk.rawTimestamp;
             finalList.push({
               uid: realUid,
               name: pk.name,
-              timestamp: pk.timestamp,
-              rawTimestamp: pk.rawTimestamp,
+              timestamp: useTimestamp,
+              rawTimestamp: useRawTimestamp,
               psid: pk.psid,
               convId: pk.convId,
               tagIds: pk.tagIds
