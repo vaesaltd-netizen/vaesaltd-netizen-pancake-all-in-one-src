@@ -719,20 +719,19 @@
 
         for (var i = 0; i < pancakeResult.length; i++) {
           var conv = pancakeResult[i];
+          var debugName = (conv.page_customer && conv.page_customer.name) || (conv.from && conv.from.name) || "";
+          if (debugName.toLowerCase().indexOf("tran hon") > -1 || debugName.toLowerCase().indexOf("trần hồn") > -1 || debugName.toLowerCase().indexOf("tran h") > -1) {
+            console.log("[Vaesa] DEBUG Tran Hon:", JSON.stringify({tags: conv.tags, page_customer: conv.page_customer, from: conv.from, id: conv.id}).substring(0, 800));
+          }
           var convTagIds = (conv.tags || [])
             .filter(function (t) { return t != null; })
             .map(function (t) { return String(t.id != null ? t.id : t); });
 
-          // Có chứa thẻ (OR): có ít nhất 1 tag trong sourceTagIds
+          // Filter theo sourceTagIds (OR): có ít nhất 1 tag trong sourceTagIds
           var hasAnySource = sourceTagIds.some(function (id) {
             return convTagIds.indexOf(id) > -1;
           });
-          if (!hasAnySource) {
-            if (skipNoTag < 3) {
-              console.log("[Vaesa] SKIP no tag - conv.tags:", JSON.stringify(conv.tags), "convTagIds:", convTagIds, "sourceTagIds:", sourceTagIds, "name:", (conv.page_customer || {}).name || (conv.from || {}).name);
-            }
-            skipNoTag++; continue;
-          }
+          if (!hasAnySource) { skipNoTag++; continue; }
 
           // Loại trừ thẻ: có bất kỳ tag nào trong excludeTagIds → bỏ
           if (excludeTagIds.length > 0) {
