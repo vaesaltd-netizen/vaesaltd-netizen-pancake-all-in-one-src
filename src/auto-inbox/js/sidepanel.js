@@ -947,8 +947,20 @@
           VaesaUtils.formatNumber(scanCount) + " khách hàng đã quét...";
       },
       function (result) {
+        // Filter theo thời gian quét
+        if (result && result.customers && (scanSince || scanUntil)) {
+          var sinceMs = scanSince ? new Date(scanSince + "T00:00:00").getTime() : 0;
+          var untilMs = scanUntil ? new Date(scanUntil + "T23:59:59").getTime() : Infinity;
+          var beforeFilter = result.customers.length;
+          result.customers = result.customers.filter(function (c) {
+            var ts = parseInt(c.rawTimestamp, 10);
+            if (isNaN(ts)) return true;
+            return ts >= sinceMs && ts <= untilMs;
+          });
+          console.log("[Vaesa] Filter thời gian: " + beforeFilter + " → " + result.customers.length + " (bỏ " + (beforeFilter - result.customers.length) + " ngoài khoảng)");
+        }
+
         var fbTotal = (result && result.customers) ? result.customers.length : 0;
-        console.log("[Vaesa] DEBUG: 1. Facebook quét được (Có chứa thẻ trống): " + fbTotal + " khách");
         // Nếu có tag loại trừ → lọc bằng Pancake API
         if (excludeTagIds.length > 0 && pancakeToken && result.customers && result.customers.length > 0) {
           getEl("p-txt").textContent = "Đang lọc tag loại trừ...";
