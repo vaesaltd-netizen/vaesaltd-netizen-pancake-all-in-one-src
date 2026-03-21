@@ -727,7 +727,12 @@
           var hasAnySource = sourceTagIds.some(function (id) {
             return convTagIds.indexOf(id) > -1;
           });
-          if (!hasAnySource) { skipNoTag++; continue; }
+          if (!hasAnySource) {
+            if (skipNoTag < 3) {
+              console.log("[Vaesa] SKIP no tag - conv.tags:", JSON.stringify(conv.tags), "convTagIds:", convTagIds, "sourceTagIds:", sourceTagIds, "name:", (conv.page_customer || {}).name || (conv.from || {}).name);
+            }
+            skipNoTag++; continue;
+          }
 
           // Loại trừ thẻ: có bất kỳ tag nào trong excludeTagIds → bỏ
           if (excludeTagIds.length > 0) {
