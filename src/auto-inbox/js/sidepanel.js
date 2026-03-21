@@ -694,10 +694,24 @@
       var scanSince = getEl("p-scan-since") ? getEl("p-scan-since").value : "";
       var scanUntil = getEl("p-scan-until") ? getEl("p-scan-until").value : "";
 
+      var pancakeDone = false;
+      var fbDone = false;
       var pancakeResult = null;
+      var fbResult = null;
       var pancakeError = null;
+      var pancakeCount = 0;
+      var fbCount = 0;
 
-      function processPancakeV2Result() {
+      function updateProgress() {
+        var parts = [];
+        parts.push("Pancake: " + VaesaUtils.formatNumber(pancakeCount) + (pancakeDone ? " ✓" : "..."));
+        parts.push("Facebook: " + VaesaUtils.formatNumber(fbCount) + (fbDone ? " ✓" : "..."));
+        getEl("p-txt").textContent = parts.join(" | ");
+      }
+
+      function tryMerge() {
+        if (!pancakeDone || !fbDone) return;
+
         if (pancakeError || !pancakeResult) {
           getEl("p-prog").style.display = "none";
           getEl("p-go").style.display = "";
@@ -705,35 +719,24 @@
           return;
         }
 
-        getEl("p-txt").textContent = "Đang xử lý dữ liệu...";
-
-        console.log("===== [Vaesa] DEBUG BÁO CÁO (V2) =====");
-        console.log("[Vaesa] Pancake API v2 trả về:", pancakeResult.length, "conversations");
-        console.log("[Vaesa] sourceTagIds:", sourceTagIds);
-        console.log("[Vaesa] excludeTagIds:", excludeTagIds);
+        getEl("p-txt").textContent = "Đang mapping UID...";
 
         // Client-side filter: Có chứa thẻ + Loại trừ thẻ
-        var finalList = [];
-        var skipNoTag = 0, skipExclude = 0, skipNoName = 0, skipNoUid = 0;
-        var seenUids = {};
-
+        var pancakeFiltered = [];
+        var skipNoTag = 0, skipExclude = 0, skipNoName = 0;
         for (var i = 0; i < pancakeResult.length; i++) {
           var conv = pancakeResult[i];
-          var debugName = (conv.page_customer && conv.page_customer.name) || (conv.from && conv.from.name) || "";
-          if (debugName.toLowerCase().indexOf("tran hon") > -1 || debugName.toLowerCase().indexOf("trần hồn") > -1 || debugName.toLowerCase().indexOf("tran h") > -1) {
-            console.log("[Vaesa] DEBUG Tran Hon tags=" + JSON.stringify(conv.tags) + " globalId=" + ((conv.page_customer || {}).global_id || "NULL") + " name=" + debugName);
-          }
           var convTagIds = (conv.tags || [])
             .filter(function (t) { return t != null; })
             .map(function (t) { return String(t.id != null ? t.id : t); });
 
-          // Filter theo sourceTagIds (OR): có ít nhất 1 tag trong sourceTagIds
+          // Có chứa thẻ (OR)
           var hasAnySource = sourceTagIds.some(function (id) {
             return convTagIds.indexOf(id) > -1;
           });
           if (!hasAnySource) { skipNoTag++; continue; }
 
-          // Loại trừ thẻ: có bất kỳ tag nào trong excludeTagIds → bỏ
+          // Loại trừ thẻ
           if (excludeTagIds.length > 0) {
             var hasExclude = excludeTagIds.some(function (id) {
               return convTagIds.indexOf(id) > -1;
@@ -741,31 +744,29 @@
             if (hasExclude) { skipExclude++; continue; }
           }
 
-          // Lấy thông tin KH từ v2 response
-          var pageCustomer = conv.page_customer || {};
           var customer = conv.customers && conv.customers[0];
-          var clientName = pageCustomer.name || (customer && customer.name) || conv.customer_name || "";
+          var clientName = (customer && customer.name) || conv.customer_name || conv.name || "";
           if (!clientName || clientName === "Facebook User" || clientName === "Người dùng Facebook") { skipNoName++; continue; }
 
-          // UID từ page_customer.global_id (v2 mới có)
-          var uid = pageCustomer.global_id || null;
-          if (!uid) { skipNoUid++; continue; }
+          var psid = String(
+            (customer && customer.fb_id) ||
+            conv.customer_id ||
+            (customer && customer.id) ||
+            conv.id || ""
+          );
 
-          // Dedup theo UID
-          if (seenUids[uid]) continue;
-          seenUids[uid] = true;
-
-          // PSID
-          var psid = String(pageCustomer.psid || (customer && customer.fb_id) || "");
-
-          // Timestamp
           var rawUpdated = conv.updated_at || conv.last_message_at || "";
           var lastMsgMs;
           if (typeof rawUpdated === "number") {
             lastMsgMs = rawUpdated < 10000000000 ? rawUpdated * 1000 : rawUpdated;
           } else if (typeof rawUpdated === "string" && rawUpdated) {
             var parsed = Date.parse(rawUpdated);
-            lastMsgMs = !isNaN(parsed) ? parsed : Date.now();
+            if (!isNaN(parsed)) {
+              lastMsgMs = parsed;
+            } else {
+              var asNum = parseInt(rawUpdated, 10);
+              lastMsgMs = asNum < 10000000000 ? asNum * 1000 : asNum;
+            }
           } else {
             lastMsgMs = Date.now();
           }
@@ -777,69 +778,143 @@
             hour12: false
           });
 
-          finalList.push({
-            uid: uid,
+          pancakeFiltered.push({
+            psid: psid,
             name: clientName,
+            nameLower: clientName.toLowerCase().trim(),
             timestamp: formattedTs,
             rawTimestamp: String(lastMsgMs),
-            psid: psid,
             convId: String(conv.id || ""),
             tagIds: convTagIds
           });
         }
 
-        console.log("[Vaesa] Lọc: không có tag=" + skipNoTag + ", loại trừ=" + skipExclude + ", không tên=" + skipNoName + ", không UID=" + skipNoUid);
-        console.log("[Vaesa] ===== KẾT QUẢ CUỐI: " + finalList.length + " khách hàng =====");
+        if (pancakeFiltered.length === 0) {
+          handleScanResult({ customers: [] });
+          return;
+        }
+
+        // Tạo map tên → UID từ Facebook
+        var fbCustomers = (fbResult && fbResult.customers) || [];
+        var nameToUid = {};
+        for (var j = 0; j < fbCustomers.length; j++) {
+          var fb = fbCustomers[j];
+          var fbNameKey = (fb.name || "").toLowerCase().trim();
+          if (fbNameKey && fb.uid) {
+            nameToUid[fbNameKey] = fb.uid;
+          }
+        }
+
+        // Mapping: Pancake name → Facebook UID
+        var finalList = [];
+        var mappedCount = 0;
+        var unmappedCount = 0;
+        for (var k = 0; k < pancakeFiltered.length; k++) {
+          var pk = pancakeFiltered[k];
+          var realUid = nameToUid[pk.nameLower];
+          if (realUid) {
+            mappedCount++;
+            var fbMatch = null;
+            for (var fi = 0; fi < fbCustomers.length; fi++) {
+              if (fbCustomers[fi].uid === realUid) { fbMatch = fbCustomers[fi]; break; }
+            }
+            var useTimestamp = (fbMatch && fbMatch.timestamp) ? fbMatch.timestamp : pk.timestamp;
+            var useRawTimestamp = (fbMatch && fbMatch.rawTimestamp) ? fbMatch.rawTimestamp : pk.rawTimestamp;
+            finalList.push({
+              uid: realUid,
+              name: pk.name,
+              timestamp: useTimestamp,
+              rawTimestamp: useRawTimestamp,
+              psid: pk.psid,
+              convId: pk.convId,
+              tagIds: pk.tagIds
+            });
+          } else {
+            unmappedCount++;
+          }
+        }
+
+        // Dedup theo UID
+        var seenUids = {};
+        var dedupList = [];
+        for (var d = 0; d < finalList.length; d++) {
+          if (!seenUids[finalList[d].uid]) {
+            seenUids[finalList[d].uid] = true;
+            dedupList.push(finalList[d]);
+          }
+        }
+        finalList = dedupList;
+
+        console.log("[Vaesa] Pancake lọc: " + pancakeFiltered.length + " (bỏ: không thẻ=" + skipNoTag + ", loại trừ=" + skipExclude + ", không tên=" + skipNoName + ")");
+        console.log("[Vaesa] Mapping: " + mappedCount + " UID, " + unmappedCount + " không khớp");
+        console.log("[Vaesa] ===== KẾT QUẢ: " + finalList.length + " khách hàng =====");
 
         handleScanResult({ customers: finalList });
       }
 
-      // === Quét Pancake V2 — tuần tự theo từng tag (OR logic) ===
+      // === Chạy song song ===
+
+      // 1. Pancake scan — quét TẤT CẢ sourceTagIds rồi merge (OR logic)
       var allPancakeConvs = [];
+      var pancakeTagsDone = 0;
       var totalPancakeTags = sourceTagIds.length;
       var firstPancakeError = null;
 
       function scanNextPancakeTag(tagIndex) {
         if (tagIndex >= totalPancakeTags || scanStopped) {
-          // Dedup theo conversation id
           var seenConvIds = {};
           var dedupConvs = [];
           for (var i = 0; i < allPancakeConvs.length; i++) {
-            var convId = String(allPancakeConvs[i].id || i);
+            var convId = String(allPancakeConvs[i].id || allPancakeConvs[i].conversation_id || i);
             if (!seenConvIds[convId]) {
               seenConvIds[convId] = true;
               dedupConvs.push(allPancakeConvs[i]);
             }
           }
-          console.log("[Vaesa] Pancake v2: quét " + totalPancakeTags + " thẻ, tổng " + allPancakeConvs.length + " conv, sau dedup: " + dedupConvs.length);
-          pancakeResult = dedupConvs;
+          pancakeDone = true;
           pancakeError = firstPancakeError;
-          processPancakeV2Result();
+          pancakeResult = dedupConvs;
+          updateProgress();
+          tryMerge();
           return;
         }
 
-        getEl("p-txt").textContent = "Đang quét thẻ " + (tagIndex + 1) + "/" + totalPancakeTags + "...";
-
-        PancakeAPI.getAllConversationsV2(
+        PancakeAPI.getAllConversationsByTag(
           appState.sel.id,
           pancakeToken,
           sourceTagIds[tagIndex],
           { sinceDate: scanSince || null, untilDate: scanUntil || null, maxMonths: 24 },
-          function (total) {
-            getEl("p-txt").textContent = "Thẻ " + (tagIndex + 1) + "/" + totalPancakeTags + ": " + VaesaUtils.formatNumber(allPancakeConvs.length + total) + " hội thoại...";
-          },
+          function (total) { pancakeCount = allPancakeConvs.length + total; updateProgress(); },
           function () { return scanStopped; },
           function (err, conversations) {
             if (err && !firstPancakeError) firstPancakeError = err;
             if (conversations && conversations.length > 0) {
               allPancakeConvs = allPancakeConvs.concat(conversations);
+              pancakeCount = allPancakeConvs.length;
+              updateProgress();
             }
+            pancakeTagsDone++;
             scanNextPancakeTag(tagIndex + 1);
           }
         );
       }
 
       scanNextPancakeTag(0);
+
+      // 2. Facebook scan (chạy đồng thời)
+      VaesaAPI.scanInboxCustomers(
+        appState.sel.id,
+        10000,
+        function (count) { fbCount = count; updateProgress(); },
+        function (result) {
+          fbDone = true;
+          fbResult = result;
+          updateProgress();
+          tryMerge();
+        },
+        null,
+        function () { return scanStopped; }
+      );
       return;
     }
 
