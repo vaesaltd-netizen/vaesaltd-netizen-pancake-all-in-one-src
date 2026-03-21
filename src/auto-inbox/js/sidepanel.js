@@ -721,7 +721,7 @@
           var conv = pancakeResult[i];
           var debugName = (conv.page_customer && conv.page_customer.name) || (conv.from && conv.from.name) || "";
           if (debugName.toLowerCase().indexOf("tran hon") > -1 || debugName.toLowerCase().indexOf("trần hồn") > -1 || debugName.toLowerCase().indexOf("tran h") > -1) {
-            console.log("[Vaesa] DEBUG Tran Hon:", JSON.stringify({tags: conv.tags, page_customer: conv.page_customer, from: conv.from, id: conv.id}).substring(0, 800));
+            console.log("[Vaesa] DEBUG Tran Hon tags=" + JSON.stringify(conv.tags) + " globalId=" + ((conv.page_customer || {}).global_id || "NULL") + " name=" + debugName);
           }
           var convTagIds = (conv.tags || [])
             .filter(function (t) { return t != null; })
