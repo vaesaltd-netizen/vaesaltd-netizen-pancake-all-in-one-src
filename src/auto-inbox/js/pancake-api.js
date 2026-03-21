@@ -2,7 +2,9 @@ var PancakeAPI = (function () {
   "use strict";
 
   var BASE_URL = "https://pages.fm/api/public_api/v1";
+  var BASE_URL_V2 = "https://pages.fm/api/public_api/v2";
   var PANCAKE_URL = "https://pancake.vn/api/v1";
+  var PANCAKE_URL_V2 = "https://pancake.vn/api/v2";
   var lastRequestTime = 0;
 
   // Lấy session token (cookie jwt) từ pancake.vn
@@ -48,6 +50,118 @@ var PancakeAPI = (function () {
       } else {
         callback(err || "pages.fm failed, no session token for fallback", null);
       }
+    });
+  }
+
+  // Fetch v2 với fallback: pages.fm v2 → pancake.vn v2
+  function fetchWithFallbackV2(pageId, path, accessToken, sessionToken, callback) {
+    var pagesFmUrl = BASE_URL_V2 + "/pages/" + pageId + "/" + path +
+      (path.indexOf("?") > -1 ? "&" : "?") + "access_token=" + accessToken;
+
+    pancakeFetch(pagesFmUrl, sessionToken, function (err, data) {
+      if (!err && data && data.success !== false) {
+        return callback(null, data);
+      }
+      // Fallback to pancake.vn v2
+      if (sessionToken) {
+        var pancakeUrl = PANCAKE_URL_V2 + "/pages/" + pageId + "/" + path +
+          (path.indexOf("?") > -1 ? "&" : "?") + "access_token=" + sessionToken;
+        pancakeFetch(pancakeUrl, sessionToken, callback);
+      } else {
+        callback(err || "pages.fm v2 failed, no session token for fallback", null);
+      }
+    });
+  }
+
+  // Quét TẤT CẢ conversations bằng API v2 (có page_customer.global_id = UID)
+  // tagId: null = quét toàn bộ, number = quét theo tag
+  function getAllConversationsV2(pageId, accessToken, tagId, options, onProgress, checkStop, callback) {
+    var maxMonths = (options && options.maxMonths) || 24;
+    var sinceDate = options && options.sinceDate;
+    var untilDate = options && options.untilDate;
+
+    getSessionToken(function (sessionToken) {
+      var nowTs = Math.floor(Date.now() / 1000);
+      var MONTH = 30 * 24 * 3600;
+
+      var globalSince = sinceDate ? Math.floor(new Date(sinceDate + "T00:00:00").getTime() / 1000) : null;
+      var globalUntil = untilDate ? Math.floor(new Date(untilDate + "T23:59:59").getTime() / 1000) : nowTs;
+
+      if (globalSince) {
+        maxMonths = Math.ceil((globalUntil - globalSince) / MONTH) + 1;
+      }
+
+      var allConversations = [];
+      var seenIds = {};
+      var consecutiveErrors = 0;
+      var lastError = "";
+      var monthIndex = 0;
+
+      function scanNextMonth() {
+        if (monthIndex >= maxMonths || consecutiveErrors >= 3) {
+          if (allConversations.length === 0 && lastError) {
+            return callback("Không quét được. Lỗi: " + lastError, []);
+          }
+          return callback(null, allConversations);
+        }
+        if (checkStop && checkStop()) {
+          return callback(null, allConversations);
+        }
+
+        var until = globalUntil - monthIndex * MONTH;
+        var since = until - MONTH;
+
+        if (globalSince && since < globalSince) since = globalSince;
+        if (globalSince && until < globalSince) {
+          return callback(null, allConversations);
+        }
+
+        var pageNumber = 1;
+
+        function scanNextPage() {
+          if (checkStop && checkStop()) {
+            return callback(null, allConversations);
+          }
+
+          var path = "conversations?page_number=" + pageNumber +
+            "&since=" + since + "&until=" + until;
+          if (tagId) {
+            path += "&tag_ids[]=" + tagId;
+          }
+
+          fetchWithFallbackV2(pageId, path, accessToken, sessionToken, function (err, data) {
+            if (err) {
+              lastError = err;
+              consecutiveErrors++;
+              monthIndex++;
+              return scanNextMonth();
+            }
+            consecutiveErrors = 0;
+            var convs = (data && (data.conversations || data.data)) || [];
+            if (convs.length === 0) {
+              monthIndex++;
+              return scanNextMonth();
+            }
+            for (var i = 0; i < convs.length; i++) {
+              var cid = String(convs[i].id);
+              if (!seenIds[cid]) {
+                seenIds[cid] = true;
+                allConversations.push(convs[i]);
+              }
+            }
+            if (onProgress) onProgress(allConversations.length);
+            if (convs.length < 200) {
+              monthIndex++;
+              scanNextMonth();
+            } else {
+              pageNumber++;
+              scanNextPage();
+            }
+          });
+        }
+        scanNextPage();
+      }
+      scanNextMonth();
     });
   }
 
@@ -268,6 +382,7 @@ var PancakeAPI = (function () {
     getTags: getTags,
     getConversationsByTag: getConversationsByTag,
     getAllConversationsByTag: getAllConversationsByTag,
+    getAllConversationsV2: getAllConversationsV2,
     addTags: addTags,
     removeTag: removeTag,
     saveToken: saveToken,

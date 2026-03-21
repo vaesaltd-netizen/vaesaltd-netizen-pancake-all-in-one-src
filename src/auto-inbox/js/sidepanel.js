@@ -170,7 +170,7 @@
   }
   function renderScanTab() {
     scanContainer.innerHTML =
-      '  <div class="card"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg> Chọn Fanpage</div>    <p class="card-desc"></p>    <div id="p-list" class="page-list"></div>    <button class="btn btn-outline" id="p-load" style="width:100%;margin-top:8px;font-size:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Tải lại danh sách Fanpage</button>    <div id="p-cfg" style="display:none;margin-top:14px">    <div style="font-weight:600;font-size:14px;margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.18V21a2 2 0 1 1-4 0v-.09z"/></svg> Cấu hình quét</div>    <div class="hint" style="margin-bottom:8px">Quét toàn bộ khách hàng đã từng nhắn tin đến Fanpage theo tag Pancake trong khoảng thời gian tuỳ chọn.</div>    <div id="p-session-status" style="margin-bottom:8px;padding:8px 12px;border-radius:8px;font-size:12px;display:none"></div>    <label class="label" style="margin-top:8px">Pancake Access Token</label>    <div style="display:flex;gap:6px;align-items:center">      <input type="password" class="input" id="p-pancake-token" placeholder="Nhập access_token..." style="flex:1">      <button class="btn btn-outline" id="p-token-toggle" title="Hiện/ẩn token" style="padding:8px 10px;font-size:13px;flex-shrink:0">👁</button>      <button class="btn btn-primary" id="p-token-save" style="padding:8px 14px;flex-shrink:0;font-size:12px">Lưu</button>    </div>    <div class="hint" id="p-token-status"></div>    <button class="btn btn-primary" id="p-scan-tags" style="width:100%;margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét tag Pancake</button>    <div id="p-tag-section" style="display:none;margin-top:12px">      <label class="label">Lọc tag</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-box">          <span class="tag-placeholder" id="p-tag-placeholder">Chọn tag...</span>          <div class="tag-chips" id="p-tag-chips"></div>          <svg class="tag-arrow" id="p-tag-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-dropdown"></div>      </div>    </div>    <div id="p-tag-remove-section" style="display:none;margin-top:12px">      <label class="label">Loại trừ tag</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-remove-box">          <span class="tag-placeholder" id="p-tag-remove-placeholder">Chọn tag loại trừ...</span>          <div class="tag-chips" id="p-tag-remove-chips"></div>          <svg class="tag-arrow" id="p-tag-remove-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-remove-dropdown"></div>      </div>    </div>    <div id="p-tag-untag-section" style="display:none;margin-top:12px">      <label class="label">Xoá tag sau gửi</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-untag-box">          <span class="tag-placeholder" id="p-tag-untag-placeholder">Chọn tag cần xoá...</span>          <div class="tag-chips" id="p-tag-untag-chips"></div>          <svg class="tag-arrow" id="p-tag-untag-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-untag-dropdown"></div>      </div>    </div>    <div id="p-tag-add-section" style="display:none;margin-top:12px">      <label class="label">Gắn tag sau gửi</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-add-box">          <span class="tag-placeholder" id="p-tag-add-placeholder">Chọn tag cần gắn...</span>          <div class="tag-chips" id="p-tag-add-chips"></div>          <svg class="tag-arrow" id="p-tag-add-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-add-dropdown"></div>      </div>    </div>    <div id="p-tag-error-section" style="display:none;margin-top:12px">      <label class="label">Tag khi gửi lỗi</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-error-box">          <span class="tag-placeholder" id="p-tag-error-placeholder">Chọn tag gắn khi lỗi...</span>          <div class="tag-chips" id="p-tag-error-chips"></div>          <svg class="tag-arrow" id="p-tag-error-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-error-dropdown"></div>      </div>    </div>    <label class="label" style="margin-top:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:3px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Thời gian quét</label>    <div style="display:flex;gap:6px;align-items:center;margin-top:4px">      <div style="flex:1"><label class="label" style="font-size:11px;margin-bottom:2px">Từ ngày</label><input type="date" class="input" id="p-scan-since" style="font-size:12px"></div>      <div style="flex:1"><label class="label" style="font-size:11px;margin-bottom:2px">Đến ngày</label><input type="date" class="input" id="p-scan-until" style="font-size:12px"></div>    </div>    <div class="hint">Để trống = quét tối đa 24 tháng gần nhất.</div>    <button class="btn btn-primary" id="p-go" style="width:100%;margin-top:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Quét khách hàng</button>    <div id="p-prog" style="display:none;margin-top:14px">      <div style="font-weight:600;font-size:14px;margin-bottom:8px"><span class="spinner" style="display:inline-block;vertical-align:middle;margin-right:6px"></span> Đang quét inbox...</div>      <div class="progress-bar"><div class="progress-fill" id="p-fill"></div></div>      <div class="progress-text" id="p-txt">Đang kết nối...</div>      <button class="btn btn-danger" id="p-stop-scan" style="width:100%;margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> Dừng quét</button>    </div>    <div id="p-res" style="display:none;margin-top:14px">      <div style="font-weight:600;font-size:14px;margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg> Quét hoàn tất</div>      <div style="text-align:center;padding:12px 0"><span style="font-size:28px;font-weight:700;color:var(--blue)" id="p-total">0</span><div class="hint" style="margin-top:4px">khách hàng được tìm thấy</div></div>      <button class="btn btn-primary" id="p-export" style="width:100%;margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Tải xuống</button>      <button class="btn btn-outline" id="p-rescan" style="width:100%;margin-top:6px;font-size:12px">Quét lại</button>      <div class="hint" id="p-hint" style="display:none;margin-top:8px"></div>    </div>  </div></div>';
+      '  <div class="card"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg> Chọn Fanpage</div>    <p class="card-desc"></p>    <div id="p-list" class="page-list"></div>    <button class="btn btn-outline" id="p-load" style="width:100%;margin-top:8px;font-size:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Tải lại danh sách Fanpage</button>    <div id="p-cfg" style="display:none;margin-top:14px">    <div style="font-weight:600;font-size:14px;margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.18V21a2 2 0 1 1-4 0v-.09z"/></svg> Cấu hình quét</div>    <div class="hint" style="margin-bottom:8px">Quét toàn bộ khách hàng đã từng nhắn tin đến Fanpage theo tag Pancake trong khoảng thời gian tuỳ chọn.</div>    <div id="p-session-status" style="margin-bottom:8px;padding:8px 12px;border-radius:8px;font-size:12px;display:none"></div>    <label class="label" style="margin-top:8px">Pancake Access Token</label>    <div style="display:flex;gap:6px;align-items:center">      <input type="password" class="input" id="p-pancake-token" placeholder="Nhập access_token..." style="flex:1">      <button class="btn btn-outline" id="p-token-toggle" title="Hiện/ẩn token" style="padding:8px 10px;font-size:13px;flex-shrink:0">👁</button>      <button class="btn btn-primary" id="p-token-save" style="padding:8px 14px;flex-shrink:0;font-size:12px">Lưu</button>    </div>    <div class="hint" id="p-token-status"></div>    <button class="btn btn-primary" id="p-scan-tags" style="width:100%;margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét thẻ Pancake</button>    <div id="p-tag-section" style="display:none;margin-top:12px">      <label class="label">Có chứa thẻ</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-box">          <span class="tag-placeholder" id="p-tag-placeholder">Chọn thẻ...</span>          <div class="tag-chips" id="p-tag-chips"></div>          <svg class="tag-arrow" id="p-tag-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-dropdown"></div>      </div>    </div>    <div id="p-tag-remove-section" style="display:none;margin-top:12px">      <label class="label">Loại trừ thẻ</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-remove-box">          <span class="tag-placeholder" id="p-tag-remove-placeholder">Chọn thẻ loại trừ...</span>          <div class="tag-chips" id="p-tag-remove-chips"></div>          <svg class="tag-arrow" id="p-tag-remove-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-remove-dropdown"></div>      </div>    </div>    <div id="p-tag-untag-section" style="display:none;margin-top:12px">      <label class="label">Xóa thẻ</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-untag-box">          <span class="tag-placeholder" id="p-tag-untag-placeholder">Chọn thẻ cần xóa...</span>          <div class="tag-chips" id="p-tag-untag-chips"></div>          <svg class="tag-arrow" id="p-tag-untag-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-untag-dropdown"></div>      </div>    </div>    <div id="p-tag-add-section" style="display:none;margin-top:12px">      <label class="label">Gắn thẻ</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-add-box">          <span class="tag-placeholder" id="p-tag-add-placeholder">Chọn thẻ cần gắn...</span>          <div class="tag-chips" id="p-tag-add-chips"></div>          <svg class="tag-arrow" id="p-tag-add-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-add-dropdown"></div>      </div>    </div>    <div id="p-tag-error-section" style="display:none;margin-top:12px">      <label class="label">Thêm thẻ khi gửi lỗi</label>      <div style="position:relative">        <div class="tag-select-box" id="p-tag-error-box">          <span class="tag-placeholder" id="p-tag-error-placeholder">Chọn thẻ gắn khi lỗi...</span>          <div class="tag-chips" id="p-tag-error-chips"></div>          <svg class="tag-arrow" id="p-tag-error-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>        </div>        <div class="tag-dropdown" id="p-tag-error-dropdown"></div>      </div>    </div>    <label class="label" style="margin-top:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:3px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Thời gian quét</label>    <div style="display:flex;gap:6px;align-items:center;margin-top:4px">      <div style="flex:1"><label class="label" style="font-size:11px;margin-bottom:2px">Từ ngày</label><input type="date" class="input" id="p-scan-since" style="font-size:12px"></div>      <div style="flex:1"><label class="label" style="font-size:11px;margin-bottom:2px">Đến ngày</label><input type="date" class="input" id="p-scan-until" style="font-size:12px"></div>    </div>    <div class="hint">Để trống = quét tối đa 24 tháng gần nhất.</div>    <button class="btn btn-primary" id="p-go" style="width:100%;margin-top:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Quét khách hàng</button>    <div id="p-prog" style="display:none;margin-top:14px">      <div style="font-weight:600;font-size:14px;margin-bottom:8px"><span class="spinner" style="display:inline-block;vertical-align:middle;margin-right:6px"></span> Đang quét inbox...</div>      <div class="progress-bar"><div class="progress-fill" id="p-fill"></div></div>      <div class="progress-text" id="p-txt">Đang kết nối...</div>      <button class="btn btn-danger" id="p-stop-scan" style="width:100%;margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> Dừng quét</button>    </div>    <div id="p-res" style="display:none;margin-top:14px">      <div style="font-weight:600;font-size:14px;margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg> Quét hoàn tất</div>      <div style="text-align:center;padding:12px 0"><span style="font-size:28px;font-weight:700;color:var(--blue)" id="p-total">0</span><div class="hint" style="margin-top:4px">khách hàng được tìm thấy</div></div>      <button class="btn btn-primary" id="p-export" style="width:100%;margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Tải xuống</button>      <button class="btn btn-outline" id="p-rescan" style="width:100%;margin-top:6px;font-size:12px">Quét lại</button>      <div class="hint" id="p-hint" style="display:none;margin-top:8px"></div>    </div>  </div></div>';
     // Khôi phục danh sách page từ cache nếu có
     chrome.storage.local.get(["vaesa_cached_pages"], function (data) {
       if (data.vaesa_cached_pages && data.vaesa_cached_pages.length > 0) {
@@ -234,7 +234,7 @@
               // Cập nhật nút quét tag
               var scanTagBtn = getEl("p-scan-tags");
               if (scanTagBtn) {
-                scanTagBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét lại tag (' + session.pancakeTags.length + ' tag)';
+                scanTagBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét lại thẻ (' + session.pancakeTags.length + ' tag)';
               }
             }
 
@@ -371,7 +371,7 @@
         var tagAddSection = getEl("p-tag-add-section");
         if (tagAddSection) tagAddSection.style.display = "none";
         var scanTagBtn = getEl("p-scan-tags");
-        if (scanTagBtn) scanTagBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét tag Pancake';
+        if (scanTagBtn) scanTagBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét thẻ Pancake';
 
         // Hiện config
         getEl("p-cfg").style.display = "";
@@ -500,16 +500,16 @@
     var scanTagBtn = getEl("p-scan-tags");
 
     // Init 4 multi-selects
-    var sourceMS = initTagMultiSelect("", "Chọn tag...", "source");
-    var removeMS = initTagMultiSelect("remove", "Chọn tag loại trừ...", "remove");
-    var untagMS = initTagMultiSelect("untag", "Chọn tag cần xoá...", "untag");
-    var addMS = initTagMultiSelect("add", "Chọn tag cần gắn...", "add");
-    var errorMS = initTagMultiSelect("error", "Chọn tag gắn khi lỗi...", "error");
+    var sourceMS = initTagMultiSelect("", "Chọn thẻ...", "source");
+    var removeMS = initTagMultiSelect("remove", "Chọn thẻ loại trừ...", "remove");
+    var untagMS = initTagMultiSelect("untag", "Chọn thẻ cần xóa...", "untag");
+    var addMS = initTagMultiSelect("add", "Chọn thẻ cần gắn...", "add");
+    var errorMS = initTagMultiSelect("error", "Chọn thẻ gắn khi lỗi...", "error");
 
     // Expose để restore session có thể access
     window._tagMultiSelects = { source: sourceMS, remove: removeMS, untag: untagMS, add: addMS, error: errorMS };
 
-    // Sync: Lọc tag và Loại trừ tag không được chọn cùng tag
+    // Sync: Có chứa thẻ và Loại trừ thẻ không được chọn cùng tag
     // Hàm disable tag trong 1 dropdown dựa trên danh sách ID conflict
     function disableConflictTags(dropdownId, conflictIds, selectionKey, msRef) {
       var dropdown = getEl(dropdownId);
@@ -535,11 +535,11 @@
       var untagIds = (tagSelections.untag || []).map(function (t) { return t.id; });
       var addIds = (tagSelections.add || []).map(function (t) { return t.id; });
 
-      // Lọc tag ↔ Loại trừ tag: không chọn chung
+      // Có chứa thẻ ↔ Loại trừ thẻ: không chọn chung
       disableConflictTags("p-tag-remove-dropdown", sourceIds, "remove", removeMS);
       disableConflictTags("p-tag-dropdown", removeIds, "source", sourceMS);
 
-      // Xoá tag sau gửi ↔ Gắn tag sau gửi: không chọn chung
+      // Xóa thẻ ↔ Gắn thẻ: không chọn chung
       disableConflictTags("p-tag-add-dropdown", untagIds, "add", addMS);
       disableConflictTags("p-tag-untag-dropdown", addIds, "untag", untagMS);
     }
@@ -610,12 +610,12 @@
       }
 
       scanTagBtn.disabled = true;
-      scanTagBtn.innerHTML = '<span class="spinner"></span> Đang quét tag...';
+      scanTagBtn.innerHTML = '<span class="spinner"></span> Đang quét thẻ...';
 
       PancakeAPI.getTags(appState.sel.id, token, function (err, tags) {
         scanTagBtn.disabled = false;
         if (err || !tags || tags.length === 0) {
-          scanTagBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét tag Pancake';
+          scanTagBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét thẻ Pancake';
           tokenStatus.innerHTML = '<span style="color:var(--red);font-weight:600">Token hết hạn hoặc không hợp lệ. Vui lòng thay token mới.</span>';
           tokenInput.type = "text";
           tokenInput.focus();
@@ -652,7 +652,7 @@
         appState.pancakeTags = tags;
         saveSession();
 
-        scanTagBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét lại tag (' + tags.length + ' tag)';
+        scanTagBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Quét lại thẻ (' + tags.length + ' tag)';
       });
     };
   }
@@ -694,24 +694,10 @@
       var scanSince = getEl("p-scan-since") ? getEl("p-scan-since").value : "";
       var scanUntil = getEl("p-scan-until") ? getEl("p-scan-until").value : "";
 
-      var pancakeDone = false;
-      var fbDone = false;
       var pancakeResult = null;
-      var fbResult = null;
       var pancakeError = null;
-      var pancakeCount = 0;
-      var fbCount = 0;
 
-      function updateProgress() {
-        var parts = [];
-        parts.push("Pancake: " + VaesaUtils.formatNumber(pancakeCount) + (pancakeDone ? " ✓" : "..."));
-        parts.push("Facebook: " + VaesaUtils.formatNumber(fbCount) + (fbDone ? " ✓" : "..."));
-        getEl("p-txt").textContent = parts.join(" | ");
-      }
-
-      function tryMerge() {
-        if (!pancakeDone || !fbDone) return;
-
+      function processPancakeV2Result() {
         if (pancakeError || !pancakeResult) {
           getEl("p-prog").style.display = "none";
           getEl("p-go").style.display = "";
@@ -719,34 +705,31 @@
           return;
         }
 
-        getEl("p-txt").textContent = "Đang mapping UID...";
+        getEl("p-txt").textContent = "Đang xử lý dữ liệu...";
 
-        console.log("===== [Vaesa] DEBUG BÁO CÁO =====");
-        console.log("[Vaesa] 1. Pancake API trả về:", pancakeResult ? pancakeResult.length : 0, "conversations");
-        console.log("[Vaesa] 2. Facebook API trả về:", (fbResult && fbResult.customers) ? fbResult.customers.length : 0, "customers");
+        console.log("===== [Vaesa] DEBUG BÁO CÁO (V2) =====");
+        console.log("[Vaesa] Pancake API v2 trả về:", pancakeResult.length, "conversations");
         console.log("[Vaesa] sourceTagIds:", sourceTagIds);
         console.log("[Vaesa] excludeTagIds:", excludeTagIds);
-        if (pancakeResult && pancakeResult.length > 0) {
-          console.log("[Vaesa] Pancake sample[0]:", JSON.stringify(pancakeResult[0]).substring(0, 500));
-        }
-        if (fbResult && fbResult.customers && fbResult.customers.length > 0) {
-          console.log("[Vaesa] Facebook sample[0]:", JSON.stringify(fbResult.customers[0]));
-        }
 
-        // Client-side filter: Lọc tag
-        var pancakeFiltered = [];
-        var skipNoTag = 0, skipExclude = 0, skipNoName = 0;
+        // Client-side filter: Có chứa thẻ + Loại trừ thẻ
+        var finalList = [];
+        var skipNoTag = 0, skipExclude = 0, skipNoName = 0, skipNoUid = 0;
+        var seenUids = {};
+
         for (var i = 0; i < pancakeResult.length; i++) {
           var conv = pancakeResult[i];
           var convTagIds = (conv.tags || [])
             .filter(function (t) { return t != null; })
             .map(function (t) { return String(t.id != null ? t.id : t); });
 
+          // Có chứa thẻ (OR): có ít nhất 1 tag trong sourceTagIds
           var hasAnySource = sourceTagIds.some(function (id) {
             return convTagIds.indexOf(id) > -1;
           });
           if (!hasAnySource) { skipNoTag++; continue; }
 
+          // Loại trừ thẻ: có bất kỳ tag nào trong excludeTagIds → bỏ
           if (excludeTagIds.length > 0) {
             var hasExclude = excludeTagIds.some(function (id) {
               return convTagIds.indexOf(id) > -1;
@@ -754,35 +737,35 @@
             if (hasExclude) { skipExclude++; continue; }
           }
 
+          // Lấy thông tin KH từ v2 response
+          var pageCustomer = conv.page_customer || {};
           var customer = conv.customers && conv.customers[0];
-          var clientName = (customer && customer.name) || conv.customer_name || conv.name || "";
+          var clientName = pageCustomer.name || (customer && customer.name) || conv.customer_name || "";
           if (!clientName || clientName === "Facebook User" || clientName === "Người dùng Facebook") { skipNoName++; continue; }
 
-          var psid = String(
-            (customer && customer.fb_id) ||
-            conv.customer_id ||
-            (customer && customer.id) ||
-            conv.id || ""
-          );
-          // Pancake updated_at có thể là unix seconds hoặc ms hoặc ISO string
+          // UID từ page_customer.global_id (v2 mới có)
+          var uid = pageCustomer.global_id || null;
+          if (!uid) { skipNoUid++; continue; }
+
+          // Dedup theo UID
+          if (seenUids[uid]) continue;
+          seenUids[uid] = true;
+
+          // PSID
+          var psid = String(pageCustomer.psid || (customer && customer.fb_id) || "");
+
+          // Timestamp
           var rawUpdated = conv.updated_at || conv.last_message_at || "";
           var lastMsgMs;
           if (typeof rawUpdated === "number") {
-            // Nếu < 10 tỷ → unix seconds, cần x1000
             lastMsgMs = rawUpdated < 10000000000 ? rawUpdated * 1000 : rawUpdated;
           } else if (typeof rawUpdated === "string" && rawUpdated) {
             var parsed = Date.parse(rawUpdated);
-            if (!isNaN(parsed)) {
-              lastMsgMs = parsed;
-            } else {
-              var asNum = parseInt(rawUpdated, 10);
-              lastMsgMs = asNum < 10000000000 ? asNum * 1000 : asNum;
-            }
+            lastMsgMs = !isNaN(parsed) ? parsed : Date.now();
           } else {
             lastMsgMs = Date.now();
           }
 
-          // Format HH:mm dd/MM/yyyy (không có giây)
           var dateObj = new Date(lastMsgMs);
           var formattedTs = dateObj.toLocaleString("vi-VN", {
             hour: "2-digit", minute: "2-digit",
@@ -790,163 +773,69 @@
             hour12: false
           });
 
-          pancakeFiltered.push({
-            psid: psid,
+          finalList.push({
+            uid: uid,
             name: clientName,
-            nameLower: clientName.toLowerCase().trim(),
             timestamp: formattedTs,
             rawTimestamp: String(lastMsgMs),
+            psid: psid,
             convId: String(conv.id || ""),
             tagIds: convTagIds
           });
         }
 
-        console.log("[Vaesa] 3. Pancake sau lọc tag:", pancakeFiltered.length, "(bỏ: không có tag=" + skipNoTag + ", tag loại trừ=" + skipExclude + ", không tên=" + skipNoName + ")");
-
-        if (pancakeFiltered.length === 0) {
-          console.log("[Vaesa] KẾT QUẢ: 0 khách hàng (Pancake lọc ra 0)");
-          handleScanResult({ customers: [] });
-          return;
-        }
-
-        // Tạo map tên → UID từ Facebook
-        var fbCustomers = (fbResult && fbResult.customers) || [];
-        var nameToUid = {};
-        for (var j = 0; j < fbCustomers.length; j++) {
-          var fb = fbCustomers[j];
-          var fbNameKey = (fb.name || "").toLowerCase().trim();
-          if (fbNameKey && fb.uid) {
-            nameToUid[fbNameKey] = fb.uid;
-          }
-        }
-
-        // Mapping: Pancake name → Facebook UID
-        var finalList = [];
-        var mappedCount = 0;
-        var unmappedCount = 0;
-        for (var k = 0; k < pancakeFiltered.length; k++) {
-          var pk = pancakeFiltered[k];
-          var realUid = nameToUid[pk.nameLower];
-          if (realUid) {
-            mappedCount++;
-            // Ưu tiên timestamp từ Facebook (chính xác hơn Pancake)
-            var fbMatch = null;
-            for (var fi = 0; fi < fbCustomers.length; fi++) {
-              if (fbCustomers[fi].uid === realUid) { fbMatch = fbCustomers[fi]; break; }
-            }
-            var useTimestamp = (fbMatch && fbMatch.timestamp) ? fbMatch.timestamp : pk.timestamp;
-            var useRawTimestamp = (fbMatch && fbMatch.rawTimestamp) ? fbMatch.rawTimestamp : pk.rawTimestamp;
-            finalList.push({
-              uid: realUid,
-              name: pk.name,
-              timestamp: useTimestamp,
-              rawTimestamp: useRawTimestamp,
-              psid: pk.psid,
-              convId: pk.convId,
-              tagIds: pk.tagIds
-            });
-          } else {
-            unmappedCount++;
-            // Bỏ qua — không map được UID thật thì không đưa vào kết quả
-          }
-        }
-
-
-        // Dedup theo UID
-        var seenUids = {};
-        var dedupList = [];
-        var dupCount = 0;
-        for (var d = 0; d < finalList.length; d++) {
-          if (!seenUids[finalList[d].uid]) {
-            seenUids[finalList[d].uid] = true;
-            dedupList.push(finalList[d]);
-          } else {
-            dupCount++;
-          }
-        }
-        finalList = dedupList;
-
-        console.log("[Vaesa] 4. Facebook nameToUid map size:", Object.keys(nameToUid).length);
-        console.log("[Vaesa] 5. Mapping: " + mappedCount + " UID thật, " + unmappedCount + " bỏ qua (tên không khớp)" + (dupCount > 0 ? ", " + dupCount + " trùng UID" : ""));
+        console.log("[Vaesa] Lọc: không có tag=" + skipNoTag + ", loại trừ=" + skipExclude + ", không tên=" + skipNoName + ", không UID=" + skipNoUid);
         console.log("[Vaesa] ===== KẾT QUẢ CUỐI: " + finalList.length + " khách hàng =====");
-        if (unmappedCount > 0 && pancakeFiltered.length > 0) {
-          var unmappedList = [];
-          for (var um = 0; um < pancakeFiltered.length; um++) {
-            if (!nameToUid[pancakeFiltered[um].nameLower]) {
-              unmappedList.push(pancakeFiltered[um].name + " (PSID: " + pancakeFiltered[um].psid + ")");
-            }
-          }
-          console.log("[Vaesa] DANH SÁCH " + unmappedCount + " KHÁCH KHÔNG MAP ĐƯỢC:");
-          console.log(unmappedList.join("\n"));
-        }
+
         handleScanResult({ customers: finalList });
       }
 
-      // === Chạy song song ===
-
-      // 1. Pancake scan — quét TẤT CẢ sourceTagIds rồi merge (OR logic)
+      // === Quét Pancake V2 — tuần tự theo từng tag (OR logic) ===
       var allPancakeConvs = [];
-      var pancakeTagsDone = 0;
       var totalPancakeTags = sourceTagIds.length;
       var firstPancakeError = null;
 
       function scanNextPancakeTag(tagIndex) {
         if (tagIndex >= totalPancakeTags || scanStopped) {
-          // Đã quét hết tất cả tag → dedup theo conversation id
+          // Dedup theo conversation id
           var seenConvIds = {};
           var dedupConvs = [];
           for (var i = 0; i < allPancakeConvs.length; i++) {
-            var convId = String(allPancakeConvs[i].id || allPancakeConvs[i].conversation_id || i);
+            var convId = String(allPancakeConvs[i].id || i);
             if (!seenConvIds[convId]) {
               seenConvIds[convId] = true;
               dedupConvs.push(allPancakeConvs[i]);
             }
           }
-          console.log("[Vaesa] Pancake: quét " + totalPancakeTags + " tag, tổng " + allPancakeConvs.length + " conv, sau dedup: " + dedupConvs.length);
-          pancakeDone = true;
-          pancakeError = firstPancakeError;
+          console.log("[Vaesa] Pancake v2: quét " + totalPancakeTags + " thẻ, tổng " + allPancakeConvs.length + " conv, sau dedup: " + dedupConvs.length);
           pancakeResult = dedupConvs;
-          updateProgress();
-          tryMerge();
+          pancakeError = firstPancakeError;
+          processPancakeV2Result();
           return;
         }
 
-        PancakeAPI.getAllConversationsByTag(
+        getEl("p-txt").textContent = "Đang quét thẻ " + (tagIndex + 1) + "/" + totalPancakeTags + "...";
+
+        PancakeAPI.getAllConversationsV2(
           appState.sel.id,
           pancakeToken,
           sourceTagIds[tagIndex],
           { sinceDate: scanSince || null, untilDate: scanUntil || null, maxMonths: 24 },
-          function (total) { pancakeCount = allPancakeConvs.length + total; updateProgress(); },
+          function (total) {
+            getEl("p-txt").textContent = "Thẻ " + (tagIndex + 1) + "/" + totalPancakeTags + ": " + VaesaUtils.formatNumber(allPancakeConvs.length + total) + " hội thoại...";
+          },
           function () { return scanStopped; },
           function (err, conversations) {
             if (err && !firstPancakeError) firstPancakeError = err;
             if (conversations && conversations.length > 0) {
               allPancakeConvs = allPancakeConvs.concat(conversations);
-              pancakeCount = allPancakeConvs.length;
-              updateProgress();
             }
-            pancakeTagsDone++;
             scanNextPancakeTag(tagIndex + 1);
           }
         );
       }
 
       scanNextPancakeTag(0);
-
-      // 2. Facebook scan (chạy đồng thời)
-      VaesaAPI.scanInboxCustomers(
-        appState.sel.id,
-        10000,
-        function (count) { fbCount = count; updateProgress(); },
-        function (result) {
-          fbDone = true;
-          fbResult = result;
-          updateProgress();
-          tryMerge();
-        },
-        null,
-        function () { return scanStopped; }
-      );
       return;
     }
 
@@ -980,7 +869,7 @@
       },
       function (result) {
         var fbTotal = (result && result.customers) ? result.customers.length : 0;
-        console.log("[Vaesa] DEBUG: 1. Facebook quét được (Lọc tag trống): " + fbTotal + " khách");
+        console.log("[Vaesa] DEBUG: 1. Facebook quét được (Có chứa thẻ trống): " + fbTotal + " khách");
         // Nếu có tag loại trừ → lọc bằng Pancake API
         if (excludeTagIds.length > 0 && pancakeToken && result.customers && result.customers.length > 0) {
           getEl("p-txt").textContent = "Đang lọc tag loại trừ...";
@@ -1021,7 +910,7 @@
           if (nameLower && excludeIds["name:" + nameLower]) return false;
           return true;
         });
-        console.log("[Vaesa] Loại trừ tag: " + before + " → " + filtered.length + " (loại " + (before - filtered.length) + " KH)");
+        console.log("[Vaesa] Loại trừ thẻ: " + before + " → " + filtered.length + " (loại " + (before - filtered.length) + " KH)");
         result.customers = filtered;
         callback(result);
         return;
