@@ -721,34 +721,6 @@
 
         getEl("p-txt").textContent = "Đang mapping UID...";
 
-        // DEBUG: tìm KH "Tran Hon" trong Pancake result
-        var debugTarget = "tran hon";
-        var foundInPancake = false;
-        for (var di = 0; di < pancakeResult.length; di++) {
-          var dc = pancakeResult[di];
-          var dcName = ((dc.customers && dc.customers[0] && dc.customers[0].name) || dc.customer_name || dc.name || "").toLowerCase();
-          if (dcName.indexOf(debugTarget) > -1) {
-            foundInPancake = true;
-            var dcTags = (dc.tags || []).filter(function(t){return t!=null}).map(function(t){return t.id + ":" + t.text});
-            console.log("[Vaesa] DEBUG found '" + debugTarget + "' in Pancake: name=" + dcName + " tags=[" + dcTags.join(", ") + "] convId=" + dc.id);
-          }
-        }
-        if (!foundInPancake) {
-          console.log("[Vaesa] DEBUG '" + debugTarget + "' NOT FOUND in " + pancakeResult.length + " Pancake conversations");
-        }
-        // DEBUG: tìm trong Facebook result
-        var fbCust = (fbResult && fbResult.customers) || [];
-        var foundInFb = false;
-        for (var dj = 0; dj < fbCust.length; dj++) {
-          if ((fbCust[dj].name || "").toLowerCase().indexOf(debugTarget) > -1) {
-            foundInFb = true;
-            console.log("[Vaesa] DEBUG found '" + debugTarget + "' in Facebook: uid=" + fbCust[dj].uid + " name=" + fbCust[dj].name);
-          }
-        }
-        if (!foundInFb) {
-          console.log("[Vaesa] DEBUG '" + debugTarget + "' NOT FOUND in " + fbCust.length + " Facebook customers");
-        }
-
         // Client-side filter: Có chứa thẻ + Loại trừ thẻ
         var pancakeFiltered = [];
         var skipNoTag = 0, skipExclude = 0, skipNoName = 0;
