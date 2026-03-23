@@ -956,7 +956,7 @@
             if (isNaN(ts)) return true;
             return ts >= sinceMs && ts <= untilMs;
           });
-          console.log("[Vaesa] Filter thời gian: " + beforeFilter + " → " + result.customers.length + " (bỏ " + (beforeFilter - result.customers.length) + " ngoài khoảng)");
+          console.log("[Vaesa] Time filter: " + beforeFilter + " -> " + result.customers.length + " (skip " + (beforeFilter - result.customers.length) + ")");
         }
 
         var fbTotal = (result && result.customers) ? result.customers.length : 0;
