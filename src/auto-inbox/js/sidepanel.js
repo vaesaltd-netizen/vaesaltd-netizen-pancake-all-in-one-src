@@ -1622,7 +1622,7 @@
             '<div class="tmpl-item-info">' +
             '<strong>' + escapeHtml(t.name || "Không tên") + '</strong>' +
             '<span class="tmpl-preview">' + escapeHtml(preview) + '</span>' +
-            (imgCount > 0 ? '<span class="tmpl-badge">' + imgCount + ' ảnh</span>' : '') +
+            (imgCount > 0 ? '<span class="tmpl-badge">' + imgCount + ' media</span>' : '') +
             '</div>' +
             '<div class="tmpl-item-actions">' +
             '<button class="btn-icon tmpl-edit" data-id="' + t.id + '" title="Sửa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
@@ -1664,7 +1664,12 @@
           var url = URL.createObjectURL(blob);
           var thumb = document.createElement("div");
           thumb.className = "img-thumb";
-          thumb.innerHTML = '<img src="' + url + '" onload="URL.revokeObjectURL(this.src)"><span class="img-name">' + escapeHtml((img.name || "").substring(0, 12)) + '</span><button class="img-remove" data-idx="' + idx + '">&times;</button>';
+          var isVid = img.type && img.type.startsWith("video/");
+          if (isVid) {
+            thumb.innerHTML = '<video src="' + url + '" style="width:100%;height:60px;object-fit:cover;border-radius:6px" onloadeddata="URL.revokeObjectURL(this.src)"></video><span class="img-name">' + escapeHtml((img.name || "").substring(0, 12)) + '</span><button class="img-remove" data-idx="' + idx + '">&times;</button>';
+          } else {
+            thumb.innerHTML = '<img src="' + url + '" onload="URL.revokeObjectURL(this.src)"><span class="img-name">' + escapeHtml((img.name || "").substring(0, 12)) + '</span><button class="img-remove" data-idx="' + idx + '">&times;</button>';
+          }
           getEl("tmpl-img-thumbs").appendChild(thumb);
         });
         bindThumbRemove();
@@ -1697,7 +1702,13 @@
         var thumb = document.createElement("div");
         thumb.className = "img-thumb";
         var name = (img.name || "").substring(0, 12);
-        thumb.innerHTML = '<img src="' + url + '" onload="URL.revokeObjectURL(this.src)"><span class="img-name">' + escapeHtml(name) + '</span><button class="img-remove" data-idx="' + idx + '">&times;</button>';
+        var fileType = img.type || "";
+        var isVid = fileType.startsWith("video/");
+        if (isVid) {
+          thumb.innerHTML = '<video src="' + url + '" style="width:100%;height:60px;object-fit:cover;border-radius:6px" onloadeddata="URL.revokeObjectURL(this.src)"></video><span class="img-name">' + escapeHtml(name) + '</span><button class="img-remove" data-idx="' + idx + '">&times;</button>';
+        } else {
+          thumb.innerHTML = '<img src="' + url + '" onload="URL.revokeObjectURL(this.src)"><span class="img-name">' + escapeHtml(name) + '</span><button class="img-remove" data-idx="' + idx + '">&times;</button>';
+        }
         container.appendChild(thumb);
       });
       bindThumbRemove();
@@ -1787,7 +1798,7 @@
       var html = '<option value="">-- Chọn mẫu --</option>';
       (templates || []).forEach(function (t) {
         var imgCount = (t.images || []).length;
-        html += '<option value="' + t.id + '">' + escapeHtml(t.name) + (imgCount > 0 ? " (" + imgCount + " ảnh)" : "") + '</option>';
+        html += '<option value="' + t.id + '">' + escapeHtml(t.name) + (imgCount > 0 ? " (" + imgCount + " media)" : "") + '</option>';
       });
       sel.innerHTML = html;
     });
