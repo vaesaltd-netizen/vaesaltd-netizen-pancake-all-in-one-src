@@ -669,6 +669,8 @@
     var pancakeToken = "";
     var tokenEl = getEl("p-pancake-token");
     if (tokenEl) pancakeToken = tokenEl.value.trim();
+    var scanSince = getEl("p-scan-since") ? getEl("p-scan-since").value : "";
+    var scanUntil = getEl("p-scan-until") ? getEl("p-scan-until").value : "";
 
     // Nếu có tag nguồn → quét Pancake + Facebook SONG SONG rồi mapping
     if (sourceTagIds.length > 0 && pancakeToken) {
@@ -690,9 +692,6 @@
           stopBtn.textContent = "Đang dừng...";
         };
       }
-
-      var scanSince = getEl("p-scan-since") ? getEl("p-scan-since").value : "";
-      var scanUntil = getEl("p-scan-until") ? getEl("p-scan-until").value : "";
 
       var pancakeDone = false;
       var fbDone = false;
