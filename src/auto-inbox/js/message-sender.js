@@ -333,9 +333,19 @@ var VaesaSender = {
         };
         if (attachmentIds && typeof attachmentIds === "object") {
           {
+            var imgIdx = 0;
+            var vidIdx = 0;
             Object.keys(attachmentIds).forEach(function (index) {
               {
-                params["image_ids[" + index + "]"] = attachmentIds[index];
+                var item = attachmentIds[index];
+                if (typeof item === "object" && item.type === "video") {
+                  params["video_ids[" + vidIdx + "]"] = item.id;
+                  vidIdx++;
+                } else {
+                  var id = typeof item === "object" ? item.id : item;
+                  params["image_ids[" + imgIdx + "]"] = id;
+                  imgIdx++;
+                }
               }
             });
           }

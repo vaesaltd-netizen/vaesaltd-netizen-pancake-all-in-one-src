@@ -937,7 +937,11 @@ async function uploadFBMedia(payload) {
     const idsMap = {};
     Object.keys(jsonResponse.payload.metadata).forEach(key => {
       const metadata = jsonResponse.payload.metadata[key];
-      idsMap[key] = metadata.image_id || metadata.video_id || metadata.file_id || metadata.audio_id || metadata.fbid;
+      if (metadata.video_id) {
+        idsMap[key] = { id: metadata.video_id, type: "video" };
+      } else {
+        idsMap[key] = { id: metadata.image_id || metadata.file_id || metadata.audio_id || metadata.fbid, type: "image" };
+      }
     });
     return { success: Object.keys(idsMap).length > 0, ids: idsMap };
   } catch (error) {
