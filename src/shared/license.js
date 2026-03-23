@@ -22,39 +22,57 @@ const LICENSE_CONFIG = {
  * Persists in chrome.storage.local — one per machine/profile
  */
 async function getDeviceId() {
-  const result = await chrome.storage.local.get(LICENSE_CONFIG.DEVICE_ID_KEY);
-  if (result[LICENSE_CONFIG.DEVICE_ID_KEY]) {
-    return result[LICENSE_CONFIG.DEVICE_ID_KEY];
+  // 1. Check local cache first (fastest)
+  const localResult = await chrome.storage.local.get(LICENSE_CONFIG.DEVICE_ID_KEY);
+  if (localResult[LICENSE_CONFIG.DEVICE_ID_KEY]) {
+    return localResult[LICENSE_CONFIG.DEVICE_ID_KEY];
   }
 
-  // Tạo ID ổn định từ Chrome profile (không đổi dù xóa cài lại extension)
+  // 2. Check sync storage (survives extension uninstall/reinstall)
   let deviceId;
   try {
-    const info = await new Promise((resolve, reject) => {
-      chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, (res) => {
-        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-        else resolve(res);
-      });
-    });
-
-    if (info && info.id) {
-      // Hash Chrome profile ID → luôn giống nhau cho cùng 1 profile
-      const encoder = new TextEncoder();
-      const data = encoder.encode('veasa-device-' + info.id);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      deviceId = 'dev-' + hashArray.slice(0, 6).map(b => b.toString(16).padStart(2, '0')).join('');
+    const syncResult = await chrome.storage.sync.get('vaesa_device_id');
+    if (syncResult.vaesa_device_id) {
+      deviceId = syncResult.vaesa_device_id;
+      console.log('[License] Device ID restored from sync:', deviceId);
     }
   } catch (e) {
-    console.warn('[License] chrome.identity not available:', e);
+    console.warn('[License] sync storage not available:', e);
   }
 
-  // Fallback nếu Chrome chưa đăng nhập Google
+  // 3. Try chrome.identity (for Google-signed-in profiles)
+  if (!deviceId) {
+    try {
+      const info = await new Promise((resolve, reject) => {
+        chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, (res) => {
+          if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+          else resolve(res);
+        });
+      });
+      if (info && info.id) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode('veasa-device-' + info.id);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        deviceId = 'dev-' + hashArray.slice(0, 6).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+    } catch (e) {
+      console.warn('[License] chrome.identity not available:', e);
+    }
+  }
+
+  // 4. Fallback: generate new random ID
   if (!deviceId) {
     deviceId = 'dev-' + crypto.randomUUID().slice(0, 12);
   }
 
+  // Save to both local (fast) and sync (persistent)
   await chrome.storage.local.set({ [LICENSE_CONFIG.DEVICE_ID_KEY]: deviceId });
+  try {
+    await chrome.storage.sync.set({ vaesa_device_id: deviceId });
+  } catch (e) {
+    console.warn('[License] Could not save to sync:', e);
+  }
   console.log('[License] Device ID created:', deviceId);
   return deviceId;
 }
