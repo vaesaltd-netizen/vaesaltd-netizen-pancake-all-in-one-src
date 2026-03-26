@@ -37,7 +37,9 @@
       "Read(//c/Users/Trung Nguyen/Downloads//**)",
       "Bash(xxd \"/c/Users/Trung Nguyen/Downloads/meta-ads-analyzer-mod-by-noti.skill\")",
       "Bash(mkdir -p \"/c/Users/Trung Nguyen/Desktop/Extension/pancake-all-in-one/.claude/skills\")",
-      "Bash(unzip \"/c/Users/Trung Nguyen/Downloads/meta-ads-analyzer-mod-by-noti.skill\")"
+      "Bash(unzip \"/c/Users/Trung Nguyen/Downloads/meta-ads-analyzer-mod-by-noti.skill\")",
+      "WebFetch(domain:script.google.com)",
+      "WebFetch(domain:script.googleusercontent.com)"
     ]
   }
 }

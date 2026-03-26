@@ -128,11 +128,13 @@
           data.phone = typeof phoneData === 'object' ? phoneData.phone_number : phoneData;
         }
 
-        // Ads ID - lấy mã mới nhất (cuối mảng)
+        // Ads ID - sort theo inserted_at, lấy mới nhất
         if (customer.ad_clicks && customer.ad_clicks.length > 0) {
-          const lastClick = customer.ad_clicks[customer.ad_clicks.length - 1];
-          if (lastClick.ad_id) {
-            data.adsId = lastClick.ad_id;
+          const sorted = customer.ad_clicks.slice().sort(function(a, b) {
+            return new Date(b.inserted_at || 0) - new Date(a.inserted_at || 0);
+          });
+          if (sorted[0] && sorted[0].ad_id) {
+            data.adsId = sorted[0].ad_id;
           }
         }
       }
