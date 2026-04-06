@@ -9,7 +9,7 @@ echo "Dang tai ban moi nhat tu GitHub..."
 
 # Lay duong dan thu muc hien tai
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TEMP_DIR="$SCRIPT_DIR/_update_temp"
+TEMP_DIR="$(dirname "$SCRIPT_DIR")/_update_temp"
 ZIP_FILE="$TEMP_DIR/latest.zip"
 
 # Tao thu muc tam

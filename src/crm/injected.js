@@ -40,14 +40,6 @@
         ttUniqueId = conv.selectedFrom.tt_unique_id || conv.selectedFrom.username || '';
       }
 
-      // DEBUG: TikTok detection logging
-      console.log('[Pancake CRM] === TikTok Debug ===');
-      console.log('[Pancake CRM] fromId:', fromId);
-      console.log('[Pancake CRM] isTikTok:', isTikTok);
-      console.log('[Pancake CRM] ttUniqueId:', ttUniqueId);
-      console.log('[Pancake CRM] selectedFrom:', JSON.stringify(conv.selectedFrom, null, 2));
-      console.log('[Pancake CRM] === End Debug ===');
-
       // Build conversation_id
       // TikTok: selectedThreadId already has full format (ttm_xxx_yyy)
       // Facebook: need to build as pageId_fromId
@@ -127,6 +119,10 @@
           const phoneData = customer.recent_phone_numbers[0];
           data.phone = typeof phoneData === 'object' ? phoneData.phone_number : phoneData;
         }
+
+        // DEBUG: log customer keys to detect structure changes
+        console.log('[Pancake CRM] customer keys:', Object.keys(customer));
+        console.log('[Pancake CRM] ad_clicks raw:', JSON.stringify(customer.ad_clicks));
 
         // Ads ID - sort theo inserted_at, lấy mới nhất
         if (customer.ad_clicks && customer.ad_clicks.length > 0) {

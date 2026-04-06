@@ -178,7 +178,6 @@ var VaesaAPI = {
         }
         try {
           var data = response.data;
-          console.log("[VaesaAPI] Response data keys:", Object.keys(data || {}));
           var results = data.__q0__ || data.o0 || data;
           var threads = null;
           results && results.data && results.data.viewer && results.data.viewer.message_threads && (threads = results.data.viewer.message_threads.nodes);
@@ -186,9 +185,7 @@ var VaesaAPI = {
           if (!threads && data.data && data.data.viewer && data.data.viewer.message_threads) {
             threads = data.data.viewer.message_threads.nodes;
           }
-          console.log("[VaesaAPI] Threads found:", threads ? threads.length : 0);
           if (!threads || threads.length === 0) {
-            console.log("[VaesaAPI] No threads, finishing. Raw data sample:", JSON.stringify(data).substring(0, 500));
             callback({
               success: self.allCustomers.length > 0,
               customers: self.allCustomers

@@ -626,7 +626,7 @@
         }
 
         // Reset tag đã chọn trước đó
-        tagSelections = { source: [], remove: [], untag: [], add: [] };
+        tagSelections = { source: [], remove: [], untag: [], add: [], error: [] };
 
         // Populate tất cả 4 dropdown với cùng danh sách tag
         sourceMS.populateDropdown(tags);
@@ -965,11 +965,9 @@
           getEl("p-txt").textContent = "Đang lọc tag loại trừ...";
           filterByExcludeTags(result, excludeTagIds, pancakeToken, function (filteredResult) {
             var afterExclude = (filteredResult && filteredResult.customers) ? filteredResult.customers.length : 0;
-            console.log("[Vaesa] DEBUG: 2. Sau loại trừ tag: " + afterExclude + " khách (loại " + (fbTotal - afterExclude) + " khách)");
             handleScanResult(filteredResult);
           });
         } else {
-          console.log("[Vaesa] DEBUG: 2. Không có tag loại trừ hoặc không có pancakeToken, giữ nguyên " + fbTotal + " khách");
           handleScanResult(result);
         }
       },
