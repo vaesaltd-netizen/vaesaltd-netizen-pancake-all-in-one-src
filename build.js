@@ -1,4 +1,4 @@
-// build.js - Obfuscate source code for distribution
+// build.js - Build production version to dist/
 // Usage: node build.js
 
 const fs = require('fs');
@@ -80,19 +80,15 @@ function copyDir(src, dest) {
 
 // Main
 console.log('==========================================');
-console.log('  VAESA Extension - Build (Obfuscate)');
+console.log('  Building GROQ TEST VERSION -> dist/...');
 console.log('==========================================');
 console.log();
 
-// Clean dist (preserve .git for push history)
+// Clean dist (no .git preservation - this is a fresh test dist)
 if (fs.existsSync(DIST_DIR)) {
   try {
-    const entries = fs.readdirSync(DIST_DIR);
-    for (const entry of entries) {
-      if (entry === '.git') continue; // Keep git history for dist repo
-      fs.rmSync(path.join(DIST_DIR, entry), { recursive: true, force: true });
-    }
-    console.log('Cleaned dist/ (preserved .git)');
+    fs.rmSync(DIST_DIR, { recursive: true, force: true });
+    console.log('Cleaned dist/');
   } catch (e) {
     console.error('Khong the xoa dist/ - Dong tat ca cua so dang mo trong thu muc dist/ roi thu lai.');
     process.exit(1);
@@ -104,15 +100,9 @@ console.log();
 
 copyDir(SRC_DIR, DIST_DIR);
 
-// Also copy update.bat into dist
-const updateBatSrc = path.join(__dirname, 'update.bat');
-if (fs.existsSync(updateBatSrc)) {
-  fs.copyFileSync(updateBatSrc, path.join(DIST_DIR, 'update.bat'));
-  console.log('  Copied: update.bat');
-}
-
 console.log();
 console.log('==========================================');
 console.log('  BUILD COMPLETE!');
 console.log(`  Output: ${DIST_DIR}`);
+console.log('  Load dist/ in Chrome to test.');
 console.log('==========================================');
