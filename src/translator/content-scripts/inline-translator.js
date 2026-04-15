@@ -82,11 +82,16 @@
 
       // Listen for API key changes
       chrome.storage.onChanged.addListener((changes) => {
-        if (changes.openaiApiKey?.newValue) {
-          window.openaiTranslator.setApiKey(changes.openaiApiKey.newValue);
-          log('API key updated');
+        if (changes.groqApiKey?.newValue) {
+          window.openaiTranslator.setApiKey(changes.groqApiKey.newValue);
+          window.openaiTranslator.groqApiKey = changes.groqApiKey.newValue;
+          log('Groq API key updated');
           this.hideNoKeyWarning();
           this.scanForMessages();
+        }
+        if (changes.openaiApiKey?.newValue) {
+          window.openaiTranslator.openaiApiKey = changes.openaiApiKey.newValue;
+          log('OpenAI API key updated');
         }
       });
 
@@ -154,6 +159,69 @@
       }, BATCH_DELAY_MS);
     }
 
+    // ==================== Context Extraction ====================
+    getContextMessages(msgEl, maxCount = 10) {
+      const allMessages = Array.from(document.querySelectorAll(MESSAGE_SELECTOR));
+      const currentIndex = allMessages.indexOf(msgEl);
+
+      if (currentIndex <= 0) return [];
+
+      const contextMessages = [];
+      const start = Math.max(0, currentIndex - maxCount);
+
+      for (let i = start; i < currentIndex; i++) {
+        const el = allMessages[i];
+
+        // Skip translation elements and empty messages
+        if (el.classList.contains(TRANSLATION_CLASS) ||
+            el.classList.contains(LOADING_CLASS) ||
+            el.classList.contains(ERROR_CLASS)) {
+          continue;
+        }
+
+        // Get ORIGINAL text content only - skip pit-translation/loading/error divs
+        let text = '';
+        const wrapperDiv = el.querySelector(':scope > div');
+        if (wrapperDiv) {
+          // Get direct child divs, skip translation elements
+          const childDivs = wrapperDiv.querySelectorAll(':scope > div');
+          for (const child of childDivs) {
+            if (!child.classList.contains(TRANSLATION_CLASS) &&
+                !child.classList.contains(LOADING_CLASS) &&
+                !child.classList.contains(ERROR_CLASS)) {
+              text = child.textContent?.trim() || '';
+              break;
+            }
+          }
+          // Fallback: read only text nodes directly under wrapperDiv (not child elements)
+          if (!text) {
+            for (const node of wrapperDiv.childNodes) {
+              if (node.nodeType === Node.TEXT_NODE) {
+                text += node.textContent;
+              }
+            }
+            text = text.trim();
+          }
+        } else {
+          // Read only direct text nodes, not child elements
+          for (const node of el.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE) {
+              text += node.textContent;
+            }
+          }
+          text = text.trim();
+        }
+
+        if (!text) continue;
+
+        // Determine role from class
+        const role = el.classList.contains('client-message') ? 'customer' : 'staff';
+        contextMessages.push({ role, text });
+      }
+
+      return contextMessages;
+    }
+
     async processPendingQueue() {
       if (this.pendingQueue.size === 0) return;
 
@@ -199,12 +267,20 @@
         // Add loading indicator
         this.addLoadingIndicator(targetContainer);
 
+        // Extract context messages for context-aware translation
+        const context = this.getContextMessages(msgEl);
+
+        // Determine role of current message
+        const currentRole = msgEl.classList.contains('client-message') ? 'customer' : 'staff';
+
         batch.push({
           element: targetContainer,
           mainTextDiv: mainTextDiv,
           msgElement: msgEl,
           text: mainText,
-          srcLang: lang
+          srcLang: lang,
+          context: context,
+          currentRole: currentRole
         });
       }
 
@@ -218,7 +294,7 @@
         log(`Translating ${batch.length} messages...`);
 
         const results = await window.openaiTranslator.batchTranslate(
-          batch.map(b => ({ text: b.text, srcLang: b.srcLang }))
+          batch.map(b => ({ text: b.text, srcLang: b.srcLang, context: b.context, currentRole: b.currentRole }))
         );
 
         // Inject translations

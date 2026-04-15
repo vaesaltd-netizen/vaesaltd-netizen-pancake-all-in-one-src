@@ -107,25 +107,18 @@
           'pitAutoTranslateEnabled',
           'pitAiAutoSendEnabled',
           'pitResponseLength',
-          'pitTranslateModel',
-          'pitReplyModel',
-          'pitExpandModel'
+          'pitTranslateModel'
         ]);
 
         this.autoTranslateEnabled = result.pitAutoTranslateEnabled !== false;
         this.aiAutoSendEnabled = result.pitAiAutoSendEnabled !== false;
         this.responseLength = result.pitResponseLength || 'medium';
-        // Load 3 separate models for 3 toolbar functions
-        this.translateModel = result.pitTranslateModel || 'gpt-5.2';
-        this.replyModel = result.pitReplyModel || 'gpt-5.2';
-        this.expandModel = result.pitExpandModel || 'gpt-5.2';
+        this.translateModel = result.pitTranslateModel || 'llama-3.3-70b-versatile';
 
         log('Settings loaded:', {
           autoTranslate: this.autoTranslateEnabled,
           length: this.responseLength,
-          translateModel: this.translateModel,
-          replyModel: this.replyModel,
-          expandModel: this.expandModel
+          translateModel: this.translateModel
         });
       } catch (e) {
         log('Failed to load settings:', e);
@@ -426,48 +419,20 @@
     }
 
     createToolbarHTML() {
-      const modes = [
-        { id: 'translate-reply', label: 'Dịch' },
-        { id: 'expand-reply', label: 'Ý chính' },
-        { id: 'auto-reply', label: 'Trả lời' }
-      ];
-
-      // Calculate initial indicator position
-      const modeIndex = modes.findIndex(m => m.id === this.selectedMode);
-
-      const modeButtons = modes.map(mode => {
-        const isActive = this.selectedMode === mode.id;
-        return `
-          <button class="pit-mode-btn" data-mode="${mode.id}" style="
-            position: relative;
-            z-index: 1;
-            padding: 4px 8px;
-            border: none;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: color 0.3s ease;
-            background: transparent;
-            color: ${isActive ? 'white' : COLORS.textMuted};
-            white-space: nowrap;
-          ">${mode.label}</button>
-        `;
-      }).join('');
-
       return `
         <!-- Auto-translate Toggle -->
         <div style="
           display: flex;
           align-items: center;
           gap: 4px;
-          padding: 0 6px;
+          padding: 0 8px;
           background: white;
           border: 1px solid ${COLORS.border};
           border-radius: 8px;
           height: 28px;
           flex-shrink: 0;
-        ">
+          cursor: pointer;
+        " title="Bật/tắt tự động dịch hội thoại">
           ${ICONS.translate}
           <div id="pit-auto-toggle" style="
             position: relative;
@@ -490,33 +455,6 @@
               transition: left 0.3s ease;
             "></div>
           </div>
-        </div>
-
-        <!-- Mode selector -->
-        <div id="pit-mode-container" style="
-          position: relative;
-          display: flex;
-          align-items: center;
-          gap: 0;
-          padding: 0 3px;
-          background: white;
-          border: 1px solid ${COLORS.border};
-          border-radius: 8px;
-          height: 28px;
-          flex-shrink: 0;
-        ">
-          <div id="pit-mode-indicator" style="
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            height: calc(100% - 6px);
-            background: ${COLORS.primary};
-            border-radius: 6px;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 1px 4px rgba(37, 99, 235, 0.3);
-            z-index: 0;
-          "></div>
-          ${modeButtons}
         </div>
 
         <!-- Language dropdown -->
@@ -857,29 +795,6 @@
         let result;
 
         switch (this.selectedMode) {
-          case 'auto-reply':
-            // Read last customer message + context
-            const conversation = this.extractConversation();
-            if (conversation.length === 0) {
-              alert('Không tìm thấy tin nhắn trong hội thoại.');
-              this.setLoading(false);
-              return;
-            }
-            result = await this.generateAutoReply(conversation);
-            break;
-
-          case 'expand-reply':
-            // Get key points from chat input
-            const keyPoints = this.getPancakeChatInput();
-            if (!keyPoints) {
-              alert('Vui lòng nhập ý chính vào ô chat trước.');
-              this.setLoading(false);
-              return;
-            }
-            const convForExpand = this.extractConversation();
-            result = await this.expandKeyPoints(convForExpand, keyPoints);
-            break;
-
           case 'translate-reply':
             // Get Vietnamese text from chat input
             const vnText = this.getPancakeChatInput();
@@ -1162,216 +1077,6 @@ Nếu không đủ dữ liệu để xác định, trả lời: unknown`;
       return 'unknown';
     }
 
-    async generateAutoReply(conversation) {
-      const systemPrompt = await this.getSystemPrompt();
-      const customerMsgs = conversation.filter(m => m.role === 'customer');
-      const lastCustomerMsg = customerMsgs[customerMsgs.length - 1];
-
-      if (!lastCustomerMsg) {
-        throw new Error('Không tìm thấy tin nhắn của khách');
-      }
-
-      // Limit to last 50 messages (both shop + customer) for token optimization
-      const recentConversation = conversation.slice(-50);
-      const conversationText = recentConversation.map(m =>
-        `${m.role === 'customer' ? 'Khách' : 'Shop'}: ${m.text}`
-      ).join('\n');
-
-      // Detect target language
-      const targetLang = await this.detectTargetLanguage(conversation);
-      if (targetLang === 'ask_user') {
-        throw new Error('Không nhận diện được ngôn ngữ khách. Vui lòng chọn ngôn ngữ trên dropdown.');
-      }
-      const langInstruction = this.getLangInstruction(targetLang, 'trả lời');
-      const lengthGuide = this.getLengthGuide();
-      const langDisplay = targetLang === 'auto' ? 'ngôn ngữ của khách' : targetLang;
-
-      const prompt = `🔴 SYSTEM RULES - LUẬT BẤT DI BẤT DỊCH (PHẢI TUÂN THỦ 100%):
----
-${systemPrompt}
----
-
-📝 HỘI THOẠI GẦN NHẤT (${recentConversation.length} tin nhắn):
----
-${conversationText}
----
-
-🎯 TIN NHẮN CUỐI CỦA KHÁCH:
-"${lastCustomerMsg.text}"
-
-📋 NHIỆM VỤ CỦA BẠN:
-1. ĐỌC KỸ SYSTEM RULES ở trên - đây là luật không được vi phạm
-2. PHÂN TÍCH toàn bộ hội thoại để hiểu context
-3. XÁC ĐỊNH câu hỏi/yêu cầu CHÍNH của khách trong tin nhắn cuối
-4. KIỂM TRA shop đã hỏi/nói gì trước đó - TUYỆT ĐỐI KHÔNG lặp lại
-5. TẠO câu trả lời TIẾP NỐI hội thoại một cách tự nhiên
-
-🚫 TUYỆT ĐỐI KHÔNG ĐƯỢC:
-- Hỏi lại câu hỏi shop đã hỏi rồi
-- Yêu cầu thông tin shop đã yêu cầu rồi
-- Lặp lại nội dung tin nhắn trước của shop
-- Nếu khách trả lời ngắn (yes/ok/được) → hiểu họ đồng ý với yêu cầu trước đó → TIẾN TỚI BƯỚC TIẾP THEO
-
-⚠️ QUY TẮC TRẢ LỜI NGHIÊM NGẶT:
-- Tuân thủ 100% nội dung trong SYSTEM RULES
-- ${langInstruction}
-- ${lengthGuide}
-- KHÔNG bịa thông tin không có trong SYSTEM RULES hoặc hội thoại
-- Nếu không biết thông tin → nói sẽ kiểm tra và phản hồi sau
-
-Format output:
-REPLY: [câu trả lời - PHẢI đúng ngôn ngữ: ${langDisplay}]
-VIET: [bản dịch tiếng Việt cho nhân viên hiểu]`;
-
-      // DEBUG: Log full prompt
-      if (DEBUG) {
-        console.log('[PIT-Debug] ========== FULL PROMPT ==========');
-        console.log(prompt);
-        console.log('[PIT-Debug] ========== END PROMPT ==========');
-        console.log('[PIT-Debug] System Prompt length:', systemPrompt.length);
-        console.log('[PIT-Debug] Conversation length:', recentConversation.length);
-        console.log('[PIT-Debug] Target language:', targetLang);
-      }
-
-      try {
-        // Use replyModel for auto-reply function
-        const response = await window.openaiTranslator.callOpenAI(prompt, this.replyModel);
-
-        // DEBUG: Log response
-        if (DEBUG) {
-          console.log('[PIT-Debug] ========== AI RESPONSE ==========');
-          console.log(response);
-          console.log('[PIT-Debug] ========== END RESPONSE ==========');
-        }
-
-        // Validate response format
-        if (!response || (!response.includes('REPLY:') && !response.includes('Reply:'))) {
-          throw new Error('Invalid response format');
-        }
-
-        return response;
-      } catch (error) {
-        log('generateAutoReply failed:', error.message);
-
-        // User-friendly error messages
-        if (error.message.includes('rate') || error.message.includes('429')) {
-          throw new Error('⏳ Đang quá tải, vui lòng thử lại sau 30 giây');
-        }
-        if (error.message.includes('network') || error.message.includes('fetch')) {
-          throw new Error('🌐 Lỗi kết nối mạng, vui lòng kiểm tra internet');
-        }
-        if (error.message.includes('API key') || error.message.includes('401')) {
-          throw new Error('🔑 API key không hợp lệ, vui lòng kiểm tra Settings');
-        }
-        if (error.message.includes('Invalid response')) {
-          throw new Error('⚠️ AI trả lời sai format, vui lòng thử lại');
-        }
-
-        throw new Error('❌ Không thể tạo câu trả lời. Vui lòng thử lại.');
-      }
-    }
-
-    async expandKeyPoints(conversation, keyPoints) {
-      // Validate input
-      if (!keyPoints || keyPoints.trim().length === 0) {
-        throw new Error('📝 Vui lòng nhập ý chính');
-      }
-
-      const systemPrompt = await this.getSystemPrompt();
-
-      // Limit to last 50 messages (both shop + customer) for token optimization
-      const recentConversation = conversation.slice(-50);
-      const conversationText = recentConversation.map(m =>
-        `${m.role === 'customer' ? 'Khách' : 'Shop'}: ${m.text}`
-      ).join('\n');
-
-      // Detect target language - CRITICAL
-      const targetLang = await this.detectTargetLanguage(conversation);
-      if (targetLang === 'ask_user') {
-        throw new Error('Không nhận diện được ngôn ngữ khách. Vui lòng chọn ngôn ngữ trên dropdown.');
-      }
-      const langInstruction = this.getLangInstruction(targetLang, 'viết');
-      const lengthGuide = this.getLengthGuide();
-      const langDisplay = targetLang === 'auto' ? 'ngôn ngữ của khách' : targetLang;
-
-      const prompt = `🔴 SYSTEM RULES - LUẬT BẤT DI BẤT DỊCH (PHẢI TUÂN THỦ 100%):
----
-${systemPrompt}
----
-
-📝 HỘI THOẠI GẦN NHẤT (${recentConversation.length} tin nhắn):
----
-${conversationText}
----
-
-✍️ Ý CHÍNH TỪ NHÂN VIÊN (tiếng Việt):
-"${keyPoints}"
-
-📋 NHIỆM VỤ CỦA BẠN:
-1. ĐỌC KỸ SYSTEM RULES ở trên - đây là luật không được vi phạm
-2. PHÂN TÍCH toàn bộ hội thoại để hiểu context và tone
-3. HIỂU ý chính mà nhân viên muốn truyền đạt
-4. MỞ RỘNG ý chính thành câu văn hoàn chỉnh, chuyên nghiệp
-5. GIỮ NGUYÊN meaning - KHÔNG thêm thông tin nhân viên không đề cập
-
-⚠️ QUY TẮC VIẾT NGHIÊM NGẶT:
-- Tuân thủ 100% nội dung trong SYSTEM RULES
-- ${langInstruction}
-- Ý chính = NỘI DUNG muốn nói (tiếng Việt)
-- Output = NGÔN NGỮ CỦA KHÁCH
-- ${lengthGuide}
-- KHÔNG thêm cam kết, hứa hẹn, giá cả mà ý chính không đề cập
-- KHÔNG bịa thông tin không có trong SYSTEM RULES
-
-Format output:
-REPLY: [câu trả lời hoàn chỉnh - PHẢI đúng ngôn ngữ: ${langDisplay}]
-VIET: [bản dịch tiếng Việt cho nhân viên hiểu]`;
-
-      // DEBUG: Log key points expansion
-      if (DEBUG) {
-        console.log('[PIT-Debug] ========== EXPAND KEY POINTS ==========');
-        console.log('[PIT-Debug] Key points:', keyPoints);
-        console.log('[PIT-Debug] Target language:', targetLang);
-      }
-
-      try {
-        // Use expandModel for expand key points function
-        const response = await window.openaiTranslator.callOpenAI(prompt, this.expandModel);
-
-        // DEBUG: Log response
-        if (DEBUG) {
-          console.log('[PIT-Debug] ========== AI RESPONSE ==========');
-          console.log(response);
-          console.log('[PIT-Debug] ========== END RESPONSE ==========');
-        }
-
-        // Validate response format
-        if (!response || (!response.includes('REPLY:') && !response.includes('Reply:'))) {
-          throw new Error('Invalid response format');
-        }
-
-        return response;
-      } catch (error) {
-        log('expandKeyPoints failed:', error.message);
-
-        // User-friendly error messages
-        if (error.message.includes('rate') || error.message.includes('429')) {
-          throw new Error('⏳ Đang quá tải, vui lòng thử lại sau 30 giây');
-        }
-        if (error.message.includes('network') || error.message.includes('fetch')) {
-          throw new Error('🌐 Lỗi kết nối mạng, vui lòng kiểm tra internet');
-        }
-        if (error.message.includes('API key') || error.message.includes('401')) {
-          throw new Error('🔑 API key không hợp lệ, vui lòng kiểm tra Settings');
-        }
-        if (error.message.includes('Invalid response')) {
-          throw new Error('⚠️ AI trả lời sai format, vui lòng thử lại');
-        }
-
-        throw new Error('❌ Không thể mở rộng ý chính. Vui lòng thử lại.');
-      }
-    }
-
     async translateToCustomerLanguage(conversation, vietnameseText) {
       // Detect target language
       const targetLang = await this.detectTargetLanguage(conversation);
@@ -1412,17 +1117,6 @@ VIET: ${vietnameseText}`;
         return result.pitSystemPrompt || 'Bạn là nhân viên bán hàng chuyên nghiệp, thân thiện.';
       } catch (e) {
         return 'Bạn là nhân viên bán hàng chuyên nghiệp, thân thiện.';
-      }
-    }
-
-    getLengthGuide() {
-      switch (this.responseLength) {
-        case 'short':
-          return '- Trả lời ngắn gọn, 1-2 câu';
-        case 'detailed':
-          return '- Trả lời chi tiết, đầy đủ thông tin';
-        default:
-          return '- Trả lời vừa phải, 2-3 câu';
       }
     }
 

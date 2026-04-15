@@ -1,0 +1,97 @@
+/* Pancake Inline Translator Styles */
+/* Prefix: pit- (Pancake Inline Translator) */
+
+/* Translation text below original message */
+.pit-translation {
+  font-size: 13px;
+  color: #1a73e8;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #e8f4fd 0%, #f0f7ff 100%);
+  border-left: 3px solid #1a73e8;
+  border-radius: 0 6px 6px 0;
+  line-height: 1.5;
+  word-wrap: break-word;
+  font-style: normal;
+  font-weight: 450;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Tin nhắn khách (client) - màu xanh dương */
+.client-message .pit-translation {
+  color: #1a73e8;
+  background: linear-gradient(135deg, #e8f4fd 0%, #f0f7ff 100%);
+  border-left-color: #1a73e8;
+}
+
+/* Tin nhắn shop (page) - màu xanh lá đậm hơn để tương phản với nền xanh lá nhạt */
+.page-message .pit-translation {
+  color: #0d652d;
+  background: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.95) 100%);
+  border-left-color: #0d652d;
+}
+
+/* Hover effect */
+.pit-translation:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading state */
+.pit-loading {
+  font-size: 12px;
+  color: #666;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.pit-loading::after {
+  content: '...';
+  animation: pit-dots 1.2s steps(3, end) infinite;
+}
+
+@keyframes pit-dots {
+  0% { content: '.'; }
+  33% { content: '..'; }
+  66% { content: '...'; }
+}
+
+/* Error state */
+.pit-error {
+  font-size: 12px;
+  color: #d93025;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #fce8e6;
+  border-left: 3px solid #d93025;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Hide translation if original is Vietnamese */
+.pit-vietnamese .pit-translation {
+  display: none;
+}
+
+/* Subtle indicator that message was processed */
+.pit-translated {
+  position: relative;
+}
+
+/* Optional: Small language badge */
+.pit-lang-badge {
+  display: inline-block;
+  font-size: 10px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+  font-weight: 500;
+}
+
+.page-message .pit-lang-badge {
+  background: rgba(255, 255, 255, 0.7);
+}
