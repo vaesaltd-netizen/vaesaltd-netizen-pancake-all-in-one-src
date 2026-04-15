@@ -127,6 +127,20 @@ async function validateLicenseWithVPS(licenseKey) {
         }
       });
 
+      // Save API keys to storage so translator can use them directly
+      // New server format: groqApiKey + openaiApiKey
+      // Old server format: single apiKey → treat as groqApiKey (backward compat)
+      const keysToSave = {};
+      if (data.groqApiKey) keysToSave.groqApiKey = data.groqApiKey;
+      if (data.openaiApiKey) keysToSave.openaiApiKey = data.openaiApiKey;
+      if (!data.groqApiKey && !data.openaiApiKey && data.apiKey) {
+        keysToSave.groqApiKey = data.apiKey; // backward compat
+      }
+      if (Object.keys(keysToSave).length > 0) {
+        await chrome.storage.local.set(keysToSave);
+        console.log('[License] API keys saved:', Object.keys(keysToSave).join(', '));
+      }
+
       // Setup auto-refresh alarm
       setupLicenseRefreshAlarm();
 
@@ -134,7 +148,7 @@ async function validateLicenseWithVPS(licenseKey) {
       await chrome.storage.local.set({ licenseValid: true, licenseError: null });
 
       console.log('[License] Validated OK:', data.userName);
-      return { valid: true, userName: data.userName, groupName: data.groupName, expiresAt: data.expiresAt, apiKey: data.apiKey || null };
+      return { valid: true, userName: data.userName, groupName: data.groupName, expiresAt: data.expiresAt, apiKey: data.apiKey || null, groqApiKey: data.groqApiKey || null, openaiApiKey: data.openaiApiKey || null };
     } else {
       // Mark license as INVALID globally + clear cache so getCachedLicense() also returns invalid
       await chrome.storage.local.set({ licenseValid: false, licenseError: data.error || 'License khong hop le' });
