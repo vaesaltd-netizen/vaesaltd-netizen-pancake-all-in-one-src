@@ -1,4 +1,4 @@
-// build-groq.js - Build Groq test version to dist-groq/
+// build-groq.js - Build production version to dist/
 // Usage: node build-groq.js
 
 const fs = require('fs');
@@ -6,7 +6,7 @@ const path = require('path');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 
 const SRC_DIR = path.join(__dirname, 'src');
-const DIST_DIR = path.join(__dirname, 'dist-groq');
+const DIST_DIR = path.join(__dirname, 'dist');
 
 // Obfuscation config - strong protection but keeps extension working
 const OBFUSCATE_CONFIG = {
@@ -80,22 +80,22 @@ function copyDir(src, dest) {
 
 // Main
 console.log('==========================================');
-console.log('  Building GROQ TEST VERSION -> dist-groq/...');
+console.log('  Building GROQ TEST VERSION -> dist/...');
 console.log('==========================================');
 console.log();
 
-// Clean dist-groq (no .git preservation - this is a fresh test dist)
+// Clean dist (no .git preservation - this is a fresh test dist)
 if (fs.existsSync(DIST_DIR)) {
   try {
     fs.rmSync(DIST_DIR, { recursive: true, force: true });
-    console.log('Cleaned dist-groq/');
+    console.log('Cleaned dist/');
   } catch (e) {
-    console.error('Khong the xoa dist-groq/ - Dong tat ca cua so dang mo trong thu muc dist-groq/ roi thu lai.');
+    console.error('Khong the xoa dist/ - Dong tat ca cua so dang mo trong thu muc dist/ roi thu lai.');
     process.exit(1);
   }
 }
 
-console.log('Building from src/ -> dist-groq/...');
+console.log('Building from src/ -> dist/...');
 console.log();
 
 copyDir(SRC_DIR, DIST_DIR);
@@ -104,5 +104,5 @@ console.log();
 console.log('==========================================');
 console.log('  BUILD COMPLETE!');
 console.log(`  Output: ${DIST_DIR}`);
-console.log('  Load dist-groq/ in Chrome to test.');
+console.log('  Load dist/ in Chrome to test.');
 console.log('==========================================');
