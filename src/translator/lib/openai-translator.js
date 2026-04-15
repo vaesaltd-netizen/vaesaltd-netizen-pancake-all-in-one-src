@@ -233,12 +233,33 @@
         await this.l2Cache.init();
 
         // Load both Groq and OpenAI keys
-        const data = await chrome.storage.local.get(['groqApiKey', 'openaiApiKey']);
-        this.apiKey = data.groqApiKey || null;
+        const data = await chrome.storage.local.get(['groqApiKey', 'openaiApiKey', 'vaesa_unified_license', 'pitLicenseCache']);
         this.groqApiKey = data.groqApiKey || null;
         this.openaiApiKey = data.openaiApiKey || null;
-        if (this.groqApiKey) log('Groq API key loaded from storage');
-        if (this.openaiApiKey) log('OpenAI API key loaded from storage');
+
+        // Fallback: read from license cache if keys not saved directly
+        if (!this.groqApiKey || !this.openaiApiKey) {
+          const lc = data.vaesa_unified_license;
+          if (lc) {
+            if (!this.groqApiKey && lc.groqApiKey) this.groqApiKey = lc.groqApiKey;
+            if (!this.openaiApiKey && lc.openaiApiKey) this.openaiApiKey = lc.openaiApiKey;
+            // Old format: single apiKey → use as groqApiKey
+            if (!this.groqApiKey && !this.openaiApiKey && lc.apiKey) this.groqApiKey = lc.apiKey;
+          }
+          // Also check pitLicenseCache (legacy)
+          if (!this.groqApiKey && data.pitLicenseCache?.apiKey) {
+            this.groqApiKey = data.pitLicenseCache.apiKey;
+          }
+          // Save back to storage so next time is instant
+          const toSave = {};
+          if (this.groqApiKey && !data.groqApiKey) toSave.groqApiKey = this.groqApiKey;
+          if (this.openaiApiKey && !data.openaiApiKey) toSave.openaiApiKey = this.openaiApiKey;
+          if (Object.keys(toSave).length > 0) chrome.storage.local.set(toSave);
+        }
+
+        this.apiKey = this.groqApiKey;
+        if (this.groqApiKey) log('Groq API key loaded');
+        if (this.openaiApiKey) log('OpenAI API key loaded');
 
         // Load legacy cache into L1 (for backward compatibility)
         const cacheResult = await chrome.storage.local.get(['pitTranslationCache']);
