@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Pancake All-in-One [GROQ TEST]",
+  "name": "Pancake All-in-One (CRM + Translator + A...",
   "version": "2.0.0",
-  "description": "TEST BUILD - Groq Llama 4 Scout + Context Translation - VAESA",
+  "description": "CRM + AI Translator + Auto Inbox cho Pancake.vn - VAESA Trading Co., Ltd",
 
   "permissions": [
     "activeTab",
