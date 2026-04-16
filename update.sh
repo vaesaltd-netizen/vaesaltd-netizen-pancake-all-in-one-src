@@ -17,7 +17,7 @@ rm -rf "$TEMP_DIR"
 mkdir -p "$TEMP_DIR"
 
 # Tai zip tu GitHub
-curl -L -o "$ZIP_FILE" "https://github.com/vaesaltd-netizen/pancake-all-in-one-dist/archive/refs/heads/main.zip"
+curl -L -o "$ZIP_FILE" "https://github.com/vaesaltd-netizen/vaesaltd-netizen-pancake-all-in-one-src/archive/refs/heads/feature/groq-translator.zip"
 
 if [ ! -f "$ZIP_FILE" ]; then
     echo ""
@@ -30,7 +30,7 @@ echo "Dang giai nen..."
 # Giai nen
 unzip -q -o "$ZIP_FILE" -d "$TEMP_DIR"
 
-EXTRACTED="$TEMP_DIR/pancake-all-in-one-dist-main"
+EXTRACTED="$TEMP_DIR/vaesaltd-netizen-pancake-all-in-one-src-feature-groq-translator/dist"
 
 if [ ! -d "$EXTRACTED" ]; then
     echo ""
