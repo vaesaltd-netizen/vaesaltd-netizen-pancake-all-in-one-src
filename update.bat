@@ -17,7 +17,7 @@ if exist "%TEMP_DIR%" rmdir /s /q "%TEMP_DIR%"
 mkdir "%TEMP_DIR%"
 
 :: Tai zip tu GitHub
-powershell -Command "Invoke-WebRequest -Uri 'https://github.com/vaesaltd-netizen/pancake-all-in-one-dist/archive/refs/heads/main.zip' -OutFile '%ZIP_FILE%'"
+powershell -Command "Invoke-WebRequest -Uri 'https://github.com/vaesaltd-netizen/vaesaltd-netizen-pancake-all-in-one-src/archive/refs/heads/feature/groq-translator.zip' -OutFile '%ZIP_FILE%'"
 
 if not exist "%ZIP_FILE%" (
     echo.
@@ -31,7 +31,7 @@ echo Dang giai nen...
 :: Giai nen
 powershell -Command "Expand-Archive -Path '%ZIP_FILE%' -DestinationPath '%TEMP_DIR%' -Force"
 
-set "EXTRACTED=%TEMP_DIR%\pancake-all-in-one-dist-main"
+set "EXTRACTED=%TEMP_DIR%\vaesaltd-netizen-pancake-all-in-one-src-feature-groq-translator\dist"
 
 if not exist "%EXTRACTED%" (
     echo.
