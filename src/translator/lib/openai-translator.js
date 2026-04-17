@@ -789,10 +789,11 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
           body: JSON.stringify({
-            model: GROQ_GENERAL_MODEL_FALLBACK,
+            model: GROQ_TRANSLATE_MODEL,
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.5,
-            max_tokens: 1000
+            max_tokens: 1000,
+            reasoning_effort: 'none'
           }),
           signal: controller.signal
         });
