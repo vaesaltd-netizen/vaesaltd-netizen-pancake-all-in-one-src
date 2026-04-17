@@ -318,10 +318,12 @@
 
       } catch (e) {
         log('Error processing batch:', e);
-        // Remove loading indicators on error
+        // Remove loading indicators on error and re-observe for retry
         for (const { element, msgElement } of batch) {
           this.removeLoadingIndicator(element);
           msgElement.classList.remove(LOADING_CLASS);
+          msgElement.classList.remove(PENDING_CLASS);
+          this.intersectionObserver.observe(msgElement);
         }
       }
     }
@@ -350,15 +352,16 @@
       };
 
       this.mutationObserver = new MutationObserver(() => {
-        // Debounce scanning
-        const now = Date.now();
-        if (now - this.lastProcessTime < MUTATION_DEBOUNCE_MS) {
-          return;
+        // Debounce scanning — clear previous timer and set a new one so the
+        // last mutation in a burst always triggers a scan.
+        if (this._mutationDebounceTimer) {
+          clearTimeout(this._mutationDebounceTimer);
         }
-        this.lastProcessTime = now;
-
-        // Delay to let DOM settle
-        setTimeout(() => this.scanForMessages(), 300);
+        this._mutationDebounceTimer = setTimeout(() => {
+          this._mutationDebounceTimer = null;
+          this.lastProcessTime = Date.now();
+          this.scanForMessages();
+        }, MUTATION_DEBOUNCE_MS);
       });
 
       this.mutationObserver.observe(document.body, config);

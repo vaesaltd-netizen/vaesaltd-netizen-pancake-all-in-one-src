@@ -587,7 +587,7 @@
         toggle.style.background = this.autoTranslateEnabled ? COLORS.primary : '#D1D5DB';
       }
       if (knob) {
-        knob.style.left = this.autoTranslateEnabled ? '20px' : '2px';
+        knob.style.left = this.autoTranslateEnabled ? '16px' : '2px';
       }
 
       log('Auto-translate toggled:', this.autoTranslateEnabled);
@@ -801,7 +801,7 @@
           const foreignMatch = result.match(/REPLY:\s*(.+?)(?=VIET:|$)/s);
           const vietMatch = result.match(/VIET:\s*(.+?)$/s);
 
-          const reply = foreignMatch ? foreignMatch[1].trim() : result;
+          const reply = foreignMatch ? foreignMatch[1].trim() : result.replace(/VIET:[\s\S]*$/i, '').trim() || result;
           const vietTranslation = vietMatch ? vietMatch[1].trim() : '';
 
           // Set to chat input
@@ -1051,7 +1051,7 @@ Nếu không đủ dữ liệu để xác định, trả lời: unknown`;
 
       log('[AI Detect] Prompt:', prompt);
 
-      const response = await window.openaiTranslator.callOpenAIGeneral(prompt, 'gpt-4.1-nano');
+      const response = await window.openaiTranslator.callOpenAIGeneral(prompt);
       const result = response?.trim();
       log('[AI Detect] Response:', result);
 

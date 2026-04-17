@@ -71,7 +71,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     showLicenseStatus('Dang lam moi...', 'loading');
     try {
       const cache = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'CHECK_LICENSE' }, resolve);
+        chrome.runtime.sendMessage({ action: 'CHECK_LICENSE' }, (response) => {
+          if (chrome.runtime.lastError) { resolve(null); return; }
+          resolve(response);
+        });
       });
       if (!cache?.licenseKey) { showLicenseStatus('Chua co License Key', 'error'); return; }
       const result = await validateLicenseWithServer(cache.licenseKey);
@@ -90,7 +93,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   changeLicenseBtn.addEventListener('click', async () => {
     await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: 'CLEAR_LICENSE' }, resolve);
+      chrome.runtime.sendMessage({ action: 'CLEAR_LICENSE' }, (response) => {
+        if (chrome.runtime.lastError) { resolve(null); return; }
+        resolve(response);
+      });
     });
     licenseInputRow.style.display = 'block';
     licenseStatusRow.style.display = 'none';
@@ -115,7 +121,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadLicenseStatus() {
     try {
       const cache = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'CHECK_LICENSE' }, resolve);
+        chrome.runtime.sendMessage({ action: 'CHECK_LICENSE' }, (response) => {
+          if (chrome.runtime.lastError) { resolve(null); return; }
+          resolve(response);
+        });
       });
       if (cache && cache.valid) {
         licenseInputRow.style.display = 'none';
@@ -214,7 +223,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const openAutoInboxBtn = document.getElementById('openAutoInbox');
   if (openAutoInboxBtn) {
     openAutoInboxBtn.addEventListener('click', async () => {
-      chrome.runtime.sendMessage({ action: 'OPEN_AUTO_INBOX' }, () => { window.close(); });
+      chrome.runtime.sendMessage({ action: 'OPEN_AUTO_INBOX' }, () => {
+        if (chrome.runtime.lastError) { /* ignore */ }
+        window.close();
+      });
     });
   }
 });

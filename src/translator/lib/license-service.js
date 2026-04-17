@@ -5,7 +5,7 @@
 (function() {
   'use strict';
 
-  const DEBUG = true;
+  const DEBUG = false;
   const log = (...args) => DEBUG && console.log('[LicenseService]', ...args);
 
   class LicenseService {
@@ -124,6 +124,8 @@
       if (this.cachedLicense) {
         this.cachedLicense.expiresAt = 0;
       }
+      // Remove invalid keys from storage so translator won't reuse them
+      chrome.storage.local.remove(['groqApiKey', 'openaiApiKey']);
       // Force re-validate on next getApiKey
     }
 
