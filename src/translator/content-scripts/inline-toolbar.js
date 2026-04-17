@@ -570,19 +570,7 @@
     }
 
     updateIndicatorPosition() {
-      const indicator = document.getElementById('pit-mode-indicator');
-      const activeBtn = document.querySelector(`.pit-mode-btn[data-mode="${this.selectedMode}"]`);
-      const container = document.getElementById('pit-mode-container');
-
-      if (indicator && activeBtn && container) {
-        const containerRect = container.getBoundingClientRect();
-        const btnRect = activeBtn.getBoundingClientRect();
-
-        // Calculate position relative to container
-        const left = btnRect.left - containerRect.left;
-        indicator.style.width = `${btnRect.width}px`;
-        indicator.style.transform = `translateX(${left - 4}px)`;
-      }
+      // Mode selector removed — no-op
     }
 
     async toggleAutoTranslate() {
@@ -1107,8 +1095,7 @@ Trả lời ĐÚNG format sau (không thêm bất kỳ text nào khác):
 REPLY: [chỉ bản dịch sang ngôn ngữ khách - giữ nguyên format xuống dòng]
 VIET: ${vietnameseText}`;
 
-      // Use translateModel for translate function (same as conversation translation)
-      return await window.openaiTranslator.callOpenAI(prompt, this.translateModel);
+      return await window.openaiTranslator.callOpenAIGeneral(prompt);
     }
 
     async getSystemPrompt() {

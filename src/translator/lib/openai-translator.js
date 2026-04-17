@@ -317,7 +317,8 @@
 
     setApiKey(key) {
       this.apiKey = key;
-      chrome.storage.local.set({ openaiApiKey: key });
+      this.groqApiKey = key;
+      chrome.storage.local.set({ groqApiKey: key });
     }
 
     getApiKey() {
@@ -695,7 +696,7 @@
         const data = await response.json();
         let result = data.choices?.[0]?.message?.content?.trim();
         if (!result) throw new Error('Empty response from OpenAI');
-        result = result.replace(/^\[(KH|NV)\]:\s*/i, '');
+        result = this.cleanAIOutput(result);
 
         log('OpenAI fallback success');
         return result;
@@ -742,7 +743,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
           body: JSON.stringify({
-            model: GROQ_TRANSLATE_MODEL,
+            model: GROQ_GENERAL_MODEL_FALLBACK,
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.5,
             max_tokens: 1000
