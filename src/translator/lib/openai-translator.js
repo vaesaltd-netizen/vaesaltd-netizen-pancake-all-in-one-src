@@ -630,8 +630,8 @@
           throw new Error('Empty response from API');
         }
 
-        // Strip role tag if model echoes it back (e.g. "[KH]: ..." or "[NV]: ...")
-        translation = translation.replace(/^\[(KH|NV)\]:\s*/i, '');
+        // Strip think blocks, role tags, system prompt echoes
+        translation = this.cleanAIOutput(translation);
 
         // Mark Groq as active on success
         chrome.storage.local.set({ activeProvider: 'groq' });
@@ -755,7 +755,7 @@
           throw new Error(err.error?.message || `Groq error: ${response.status}`);
         }
         const data = await response.json();
-        const result = data.choices?.[0]?.message?.content?.trim();
+        const result = this.cleanAIOutput(data.choices?.[0]?.message?.content?.trim());
         if (!result) throw new Error('Empty response from Groq');
         return result;
       } catch (e) {
@@ -787,7 +787,7 @@
           throw new Error(err.error?.message || `OpenAI error: ${response.status}`);
         }
         const data = await response.json();
-        const result = data.choices?.[0]?.message?.content?.trim();
+        const result = this.cleanAIOutput(data.choices?.[0]?.message?.content?.trim());
         if (!result) throw new Error('Empty response from OpenAI');
         log(`General OpenAI fallback success, ${result.length} chars`);
         return result;
@@ -796,6 +796,21 @@
         if (e.name === 'AbortError') throw new Error('Request timeout');
         throw e;
       }
+    }
+
+    // ==================== Output Cleaner ====================
+    cleanAIOutput(text) {
+      if (!text) return text;
+      // Strip <think>...</think> blocks (qwen3 reasoning leak)
+      text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+      // Strip unclosed <think> block (model cut off mid-think)
+      text = text.replace(/<think>[\s\S]*/gi, '').trim();
+      // Strip role echo tags [KH]: / [NV]:
+      text = text.replace(/^\[(KH|NV)\]:\s*/i, '');
+      // Strip system prompt echo lines
+      text = text.replace(/^\[chỉ bản dịch.*\]\s*/im, '').trim();
+      text = text.replace(/^\[only.*translation.*\]\s*/im, '').trim();
+      return text.trim();
     }
 
     // ==================== Optimized Batch Translate ====================
