@@ -734,6 +734,52 @@
       throw new Error('Chưa có API Key. Vui lòng cài đặt Groq hoặc OpenAI key.');
     }
 
+    // Translate reply to customer language (Groq qwen3-32b + reasoning_effort: none)
+    async callTranslateReply(prompt) {
+      await this.waitIfNeeded();
+      if (this.apiKey) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 60000);
+          try {
+            this.stats.apiCalls++;
+            const response = await fetch(GROQ_API_ENDPOINT, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
+              body: JSON.stringify({
+                model: GROQ_TRANSLATE_MODEL,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.3,
+                max_tokens: 1000,
+                reasoning_effort: 'none'
+              }),
+              signal: controller.signal
+            });
+            clearTimeout(timeout);
+            if (!response.ok) {
+              const err = await response.json().catch(() => ({}));
+              throw new Error(err.error?.message || `Groq error: ${response.status}`);
+            }
+            const data = await response.json();
+            const result = this.cleanAIOutput(data.choices?.[0]?.message?.content?.trim());
+            if (!result) throw new Error('Empty response');
+            chrome.storage.local.set({ activeProvider: 'groq' });
+            return result;
+          } catch (e) {
+            clearTimeout(timeout);
+            throw e;
+          }
+        } catch (groqError) {
+          if (this.openaiApiKey) {
+            return this._callGeneralWithOpenAI(prompt);
+          }
+          throw groqError;
+        }
+      }
+      if (this.openaiApiKey) return this._callGeneralWithOpenAI(prompt);
+      throw new Error('Chưa có API Key.');
+    }
+
     async _callGeneralWithGroq(prompt) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);

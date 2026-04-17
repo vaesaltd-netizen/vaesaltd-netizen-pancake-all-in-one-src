@@ -1095,7 +1095,7 @@ Trả lời ĐÚNG format sau (không thêm bất kỳ text nào khác):
 REPLY: [chỉ bản dịch sang ngôn ngữ khách - giữ nguyên format xuống dòng]
 VIET: ${vietnameseText}`;
 
-      return await window.openaiTranslator.callOpenAIGeneral(prompt);
+      return await window.openaiTranslator.callTranslateReply(prompt);
     }
 
     async getSystemPrompt() {
