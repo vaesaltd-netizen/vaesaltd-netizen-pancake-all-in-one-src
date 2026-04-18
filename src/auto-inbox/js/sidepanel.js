@@ -290,27 +290,60 @@
       '<svg id="p-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0;transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg></div>';
 
     // Tạo danh sách dropdown (mặc định ẩn, position absolute để không đẩy layout)
-    html += '<div style="position:relative"><div id="p-dropdown" style="display:none;position:absolute;top:0;left:0;right:0;z-index:100;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:350px;overflow-y:auto">' + pagesData.map(function (page, index) {
-      return '<div class="page-item" data-i="' + index + '" style="cursor:pointer">' +
-        '<div class="page-avatar">' +
-        (page.avatar ? '<img src="' + page.avatar + '" onerror="this.style.display=\'none\'">' : '') +
-        '<span>' + escapeHtml(page.name.charAt(0)) + '</span></div>' +
-        '<div style="min-width:0;flex:1"><div class="page-name">' + escapeHtml(page.name) + '</div>' +
-        '<div class="page-id">ID: ' + page.id + '</div></div></div>';
-    }).join("") + '</div></div>';
+    html += '<div style="position:relative"><div id="p-dropdown" style="display:none;position:absolute;top:0;left:0;right:0;z-index:100;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12)">' +
+      '<div style="padding:8px 8px 4px;border-bottom:1px solid #f0f0f0">' +
+      '<input id="p-search" type="text" placeholder="🔍 Tìm fanpage..." autocomplete="off" style="width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;background:#f9fafb">' +
+      '</div>' +
+      '<div id="p-dropdown-list" style="max-height:300px;overflow-y:auto">' +
+      pagesData.map(function (page, index) {
+        return '<div class="page-item" data-i="' + index + '" data-name="' + escapeHtml(page.name).toLowerCase() + '" data-id="' + page.id.toLowerCase() + '" style="cursor:pointer">' +
+          '<div class="page-avatar">' +
+          (page.avatar ? '<img src="' + page.avatar + '" onerror="this.style.display=\'none\'">' : '') +
+          '<span>' + escapeHtml(page.name.charAt(0)) + '</span></div>' +
+          '<div style="min-width:0;flex:1"><div class="page-name">' + escapeHtml(page.name) + '</div>' +
+          '<div class="page-id">ID: ' + page.id + '</div></div></div>';
+      }).join("") +
+      '<div id="p-no-results" style="display:none;padding:12px;text-align:center;color:#9ca3af;font-size:13px">Không tìm thấy fanpage</div>' +
+      '</div></div></div>';
 
     pageListEl.innerHTML = html;
 
     var selectedEl = getEl("p-selected");
     var dropdownEl = getEl("p-dropdown");
+    var searchEl = getEl("p-search");
+    var listEl = getEl("p-dropdown-list");
+    var noResultsEl = getEl("p-no-results");
 
     var arrowEl = getEl("p-arrow");
+
+    // Lọc danh sách page theo từ khóa tìm kiếm
+    searchEl.addEventListener("input", function () {
+      var q = searchEl.value.trim().toLowerCase();
+      var items = listEl.querySelectorAll(".page-item");
+      var visible = 0;
+      items.forEach(function (item) {
+        var name = item.dataset.name || "";
+        var id = item.dataset.id || "";
+        var match = !q || name.indexOf(q) > -1 || id.indexOf(q) > -1;
+        item.style.display = match ? "" : "none";
+        if (match) visible++;
+      });
+      noResultsEl.style.display = visible === 0 ? "" : "none";
+    });
+
     // Click vào selected → toggle dropdown
     selectedEl.onclick = function (e) {
       e.stopPropagation();
       var isOpen = dropdownEl.style.display !== "none";
       dropdownEl.style.display = isOpen ? "none" : "";
       arrowEl.style.transform = isOpen ? "" : "rotate(180deg)";
+      if (!isOpen) {
+        // Reset search khi mở lại
+        searchEl.value = "";
+        listEl.querySelectorAll(".page-item").forEach(function (item) { item.style.display = ""; });
+        noResultsEl.style.display = "none";
+        setTimeout(function () { searchEl.focus(); }, 50);
+      }
     };
     // Click ngoài dropdown → đóng lại
     document.addEventListener("click", function () {
@@ -324,7 +357,7 @@
     });
 
     // Click vào page item → chọn page
-    dropdownEl.querySelectorAll(".page-item").forEach(function (pageItem) {
+    listEl.querySelectorAll(".page-item").forEach(function (pageItem) {
       pageItem.onclick = function () {
         var page = pagesData[+pageItem.dataset.i];
         appState.sel = page;
