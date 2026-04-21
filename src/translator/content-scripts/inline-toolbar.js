@@ -801,7 +801,9 @@
           const foreignMatch = result.match(/REPLY:\s*(.+?)(?=VIET:|$)/s);
           const vietMatch = result.match(/VIET:\s*(.+?)$/s);
 
-          const reply = foreignMatch ? foreignMatch[1].trim() : result.replace(/VIET:[\s\S]*$/i, '').trim() || result;
+          let reply = foreignMatch ? foreignMatch[1].trim() : result.replace(/VIET:[\s\S]*$/i, '').trim() || result;
+          // Strip leading/trailing brackets nếu model vẫn bọc [...]
+          reply = reply.replace(/^\[|\]$/g, '').trim();
           const vietTranslation = vietMatch ? vietMatch[1].trim() : '';
 
           // Set to chat input
@@ -1092,7 +1094,7 @@ ${vietnameseText}
 - KHÔNG thay đổi cấu trúc danh sách
 
 Trả lời ĐÚNG format sau (không thêm bất kỳ text nào khác):
-REPLY: [chỉ bản dịch sang ngôn ngữ khách - giữ nguyên format xuống dòng]
+REPLY: bản dịch sang ngôn ngữ khách
 VIET: ${vietnameseText}`;
 
       return await window.openaiTranslator.callTranslateReply(prompt);
