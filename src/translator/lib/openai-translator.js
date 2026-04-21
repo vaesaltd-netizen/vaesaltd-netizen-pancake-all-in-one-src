@@ -539,10 +539,9 @@
       }
     }
 
-    async callOpenAI(promptOrText, modelOrSrcLang = 'llama-3.3-70b-versatile') {
+    async callOpenAI(promptOrText, modelOrSrcLang = 'auto') {
       // Determine if this is a translation call or a general prompt call
       // Translation calls have srcLang like 'zh-TW', 'en', 'id', etc.
-      // General prompt calls from inline-toolbar have model like 'llama-3.3-70b-versatile'
       const isTranslationCall = ['zh-TW', 'zh-CN', 'en', 'id', 'tl', 'th', 'auto'].includes(modelOrSrcLang);
 
       if (isTranslationCall) {
@@ -707,7 +706,7 @@
     }
 
     // General prompt method (used by inline-toolbar for Dich cau tra loi)
-    // Fixed: Groq first (llama-3.3-70b-versatile) → fallback GPT-4.1-mini
+    // General call: Groq qwen3-32b first → fallback GPT-4.1
     async callOpenAIGeneral(prompt) {
       await this.waitIfNeeded();
 

@@ -113,12 +113,10 @@
         this.autoTranslateEnabled = result.pitAutoTranslateEnabled !== false;
         this.aiAutoSendEnabled = result.pitAiAutoSendEnabled !== false;
         this.responseLength = result.pitResponseLength || 'medium';
-        this.translateModel = result.pitTranslateModel || 'llama-3.3-70b-versatile';
 
         log('Settings loaded:', {
           autoTranslate: this.autoTranslateEnabled,
-          length: this.responseLength,
-          translateModel: this.translateModel
+          length: this.responseLength
         });
       } catch (e) {
         log('Failed to load settings:', e);

@@ -83,11 +83,15 @@ async function handleVersionCheckAlarm() {
   console.log('[License] 9 AM version check...');
   try {
     const deviceId = await getDeviceId();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
     const response = await fetch(LICENSE_CONFIG.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ licenseKey: cached.licenseKey, deviceId })
+      body: JSON.stringify({ licenseKey: cached.licenseKey, deviceId }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (!response.ok) return;
     const data = await response.json();
     // Check version
@@ -230,8 +234,9 @@ async function validateLicenseWithVPS(licenseKey) {
       // Check version từ server response
       if (data.min_version) await checkAndSetNeedsUpdate(data.min_version);
 
-      // Setup auto-refresh alarm
+      // Setup alarms
       setupLicenseRefreshAlarm();
+      setupVersionCheckAlarm();
 
       // Mark license as valid globally
       await chrome.storage.local.set({ licenseValid: true, licenseError: null });
@@ -333,8 +338,9 @@ async function getCachedLicense() {
  */
 async function clearLicense() {
   await chrome.storage.local.remove([LICENSE_CONFIG.CACHE_KEY, 'pitLicenseCache']);
-  await chrome.storage.local.set({ licenseValid: false, licenseError: null });
+  await chrome.storage.local.set({ licenseValid: false, licenseError: null, needsUpdate: false });
   chrome.alarms.clear(LICENSE_CONFIG.REFRESH_ALARM);
+  chrome.alarms.clear(LICENSE_CONFIG.VERSION_CHECK_ALARM);
   broadcastLicenseInvalid();
   console.log('[License] Cleared');
 }

@@ -244,6 +244,12 @@
     async processPendingQueue() {
       if (this.pendingQueue.size === 0) return;
 
+      // Block nếu license không hợp lệ hoặc cần cập nhật
+      if (licenseBlocked || updateBlocked) {
+        this.pendingQueue.clear();
+        return;
+      }
+
       if (!window.openaiTranslator.getApiKey()) {
         log('No API key, skipping translation');
         return;
@@ -328,6 +334,8 @@
             // Bỏ qua nếu model trả về giống y hệt bản gốc (không dịch được)
             const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, ' ');
             if (normalize(result.translation) === normalize(result.original)) {
+              // Đánh dấu pit-untranslatable để checkIncompleteTranslations không reset lại → tránh loop vô tận
+              msgElement.classList.add('pit-untranslatable');
               log('Translation same as original, skipping:', result.original.substring(0, 30));
             } else {
               this.injectTranslation(element, result.translation);
@@ -458,7 +466,7 @@
 
     checkIncompleteTranslations() {
       const maybeIncomplete = document.querySelectorAll(
-        `${MESSAGE_SELECTOR}.${TRANSLATED_CLASS}:not(.pit-vietnamese)`
+        `${MESSAGE_SELECTOR}.${TRANSLATED_CLASS}:not(.pit-vietnamese):not(.pit-untranslatable)`
       );
 
       for (const msg of maybeIncomplete) {
