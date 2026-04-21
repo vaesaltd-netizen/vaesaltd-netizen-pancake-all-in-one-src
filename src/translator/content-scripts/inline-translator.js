@@ -325,8 +325,14 @@
           msgElement.classList.add(TRANSLATED_CLASS);
 
           if (result.translation) {
-            this.injectTranslation(element, result.translation);
-            log('Translated:', result.original.substring(0, 20), '→', result.translation.substring(0, 20));
+            // Bỏ qua nếu model trả về giống y hệt bản gốc (không dịch được)
+            const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+            if (normalize(result.translation) === normalize(result.original)) {
+              log('Translation same as original, skipping:', result.original.substring(0, 30));
+            } else {
+              this.injectTranslation(element, result.translation);
+              log('Translated:', result.original.substring(0, 20), '→', result.translation.substring(0, 20));
+            }
           } else {
             this.injectError(element, result.error || 'Dịch thất bại');
             log('Translation failed:', result.error);
