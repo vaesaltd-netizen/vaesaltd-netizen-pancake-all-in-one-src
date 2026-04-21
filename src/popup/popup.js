@@ -29,6 +29,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProviderStatus();
   await loadSettings();
 
+  // Hiện banner nếu cần cập nhật
+  const _updateData = await chrome.storage.local.get(['needsUpdate']);
+  if (_updateData.needsUpdate) {
+    const banner = document.getElementById('update-banner');
+    if (banner) banner.style.display = 'block';
+  }
+
   // ==================== License Key Handlers ====================
 
   licenseKeyInput.addEventListener('input', (e) => {

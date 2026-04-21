@@ -14,8 +14,94 @@ const LICENSE_CONFIG = {
   CACHE_DURATION: 4 * 60 * 60 * 1000,  // 4 hours auto-refresh
   MAX_OFFLINE: 24 * 60 * 60 * 1000,    // 24 hours max offline
   LICENSE_PATTERN: /^VEASA-[A-Z0-9]{3}-[A-Z0-9]{3}$/,
-  REFRESH_ALARM: 'LICENSE_AUTO_REFRESH'
+  REFRESH_ALARM: 'LICENSE_AUTO_REFRESH',
+  VERSION_CHECK_ALARM: 'VERSION_CHECK_DAILY'
 };
+
+/** So sánh 2 version string kiểu semver. Trả về -1 nếu v1 < v2 */
+function compareVersions(v1, v2) {
+  const a = String(v1).split('.').map(Number);
+  const b = String(v2).split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((a[i] || 0) < (b[i] || 0)) return -1;
+    if ((a[i] || 0) > (b[i] || 0)) return 1;
+  }
+  return 0;
+}
+
+/** Tính timestamp của 9:00 AM ngày hôm nay hoặc ngày mai (nếu đã qua 9h) */
+function getNextNineAM() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(9, 0, 0, 0);
+  if (now >= next) next.setDate(next.getDate() + 1);
+  return next.getTime();
+}
+
+/** Đặt alarm check version lúc 9 AM mỗi ngày */
+function setupVersionCheckAlarm() {
+  chrome.alarms.get(LICENSE_CONFIG.VERSION_CHECK_ALARM, (existing) => {
+    if (!existing) {
+      chrome.alarms.create(LICENSE_CONFIG.VERSION_CHECK_ALARM, {
+        when: getNextNineAM(),
+        periodInMinutes: 24 * 60
+      });
+      console.log('[License] Version check alarm: mỗi ngày 9 AM');
+    }
+  });
+}
+
+/** Check version từ response server, set needsUpdate nếu cần */
+async function checkAndSetNeedsUpdate(minVersion) {
+  if (!minVersion) return false;
+  const currentVersion = chrome.runtime.getManifest().version;
+  const needsUpdate = compareVersions(currentVersion, minVersion) < 0;
+  await chrome.storage.local.set({ needsUpdate, vaesa_min_version: minVersion });
+  if (needsUpdate) {
+    console.warn(`[License] Cần cập nhật! v${currentVersion} < min v${minVersion}`);
+    broadcastNeedsUpdate();
+  } else {
+    console.log(`[License] Version OK: v${currentVersion} >= min v${minVersion}`);
+  }
+  return needsUpdate;
+}
+
+/** Broadcast NEEDS_UPDATE tới tất cả tabs */
+async function broadcastNeedsUpdate() {
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      try { await chrome.tabs.sendMessage(tab.id, { type: 'NEEDS_UPDATE' }); } catch (_) {}
+    }
+  } catch (e) {}
+}
+
+/** Xử lý alarm 9 AM: gọi server check version + refresh license */
+async function handleVersionCheckAlarm() {
+  const cached = await getCachedLicense();
+  if (!cached.licenseKey) return;
+  console.log('[License] 9 AM version check...');
+  try {
+    const deviceId = await getDeviceId();
+    const response = await fetch(LICENSE_CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseKey: cached.licenseKey, deviceId })
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    // Check version
+    if (data.min_version) await checkAndSetNeedsUpdate(data.min_version);
+    // Nếu license hết hạn → block luôn
+    if (!data.valid) {
+      await chrome.storage.local.set({ licenseValid: false });
+      broadcastLicenseInvalid();
+      console.warn('[License] 9 AM check: license không còn hợp lệ');
+    }
+  } catch (e) {
+    console.warn('[License] Version check thất bại (offline?):', e.message);
+  }
+}
 
 /**
  * Get or create unique device ID for this Chrome profile
@@ -140,6 +226,9 @@ async function validateLicenseWithVPS(licenseKey) {
         await chrome.storage.local.set(keysToSave);
         console.log('[License] API keys saved:', Object.keys(keysToSave).join(', '));
       }
+
+      // Check version từ server response
+      if (data.min_version) await checkAndSetNeedsUpdate(data.min_version);
 
       // Setup auto-refresh alarm
       setupLicenseRefreshAlarm();
@@ -302,8 +391,9 @@ async function initLicense() {
       console.log('[License] Cache stale, refreshing...');
       validateLicenseWithVPS(cached.licenseKey); // fire and forget
     }
-    // Setup alarm
+    // Setup alarms
     setupLicenseRefreshAlarm();
+    setupVersionCheckAlarm();
   } else {
     // No valid license
     await chrome.storage.local.set({ licenseValid: false, licenseError: null });

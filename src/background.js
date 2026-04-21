@@ -302,10 +302,13 @@ function handleMessage(request, sender, sendResponse) {
 // Initialize license system on startup
 initLicense();
 
-// Handle license auto-refresh alarm
+// Handle alarms: license refresh + daily version check
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === LICENSE_CONFIG.REFRESH_ALARM) {
     handleLicenseAlarm();
+  }
+  if (alarm.name === LICENSE_CONFIG.VERSION_CHECK_ALARM) {
+    handleVersionCheckAlarm();
   }
 });
 

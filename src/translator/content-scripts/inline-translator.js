@@ -6,22 +6,41 @@
   'use strict';
 
   let licenseBlocked = false;
+  let updateBlocked = false;
 
-  // Listen for license invalidation — stop all translation
+  // Listen for license/update messages from background
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'LICENSE_INVALID') {
       licenseBlocked = true;
       console.log('[PIT] License invalid — translation disabled');
     }
+    if (msg.type === 'NEEDS_UPDATE') {
+      updateBlocked = true;
+      showUpdateBanner();
+      console.log('[PIT] Needs update — translation disabled');
+    }
   });
 
-  // Check license on startup
-  chrome.storage.local.get('licenseValid', (data) => {
+  // Check license + needsUpdate on startup
+  chrome.storage.local.get(['licenseValid', 'needsUpdate'], (data) => {
     if (data.licenseValid !== true) {
       licenseBlocked = true;
       console.log('[PIT] No valid license — translation disabled');
     }
+    if (data.needsUpdate) {
+      updateBlocked = true;
+      showUpdateBanner();
+    }
   });
+
+  function showUpdateBanner() {
+    if (document.getElementById('pit-update-banner')) return;
+    var banner = document.createElement('div');
+    banner.id = 'pit-update-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#ef4444;color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-family:sans-serif;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,0.2)';
+    banner.innerHTML = '⚠️ <strong>Pancake Extension cần cập nhật!</strong> — Chạy <code style="background:rgba(0,0,0,0.25);padding:1px 5px;border-radius:3px">update.bat</code> rồi reload Chrome để tiếp tục dịch tin nhắn.';
+    document.body ? document.body.prepend(banner) : document.documentElement.prepend(banner);
+  }
 
   const DEBUG = false;
   const log = (...args) => DEBUG && console.log('[PIT]', ...args);
@@ -398,9 +417,9 @@
 
     // ==================== Scan & Observe Messages ====================
     scanForMessages() {
-      // Skip if license is invalid
-      if (licenseBlocked) {
-        log('License invalid, skipping scan');
+      // Skip if license is invalid or extension needs update
+      if (licenseBlocked || updateBlocked) {
+        log('Blocked (license invalid or needs update), skipping scan');
         return;
       }
 

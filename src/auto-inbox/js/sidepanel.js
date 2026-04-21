@@ -75,6 +75,26 @@
     document.getElementById("app-ver").textContent =
       "v" + chrome.runtime.getManifest().version;
   } catch (err) {}
+
+  // Kiểm tra cần cập nhật extension không
+  chrome.storage.local.get(["needsUpdate"], function (data) {
+    if (data.needsUpdate) {
+      showPanelUpdateBanner();
+    }
+  });
+  chrome.runtime.onMessage.addListener(function (msg) {
+    if (msg && msg.type === "NEEDS_UPDATE") showPanelUpdateBanner();
+  });
+  function showPanelUpdateBanner() {
+    if (document.getElementById("vaesa-update-banner")) return;
+    var banner = document.createElement("div");
+    banner.id = "vaesa-update-banner";
+    banner.style.cssText = "background:#ef4444;color:#fff;padding:10px 14px;font-size:13px;line-height:1.6;font-family:sans-serif;text-align:center";
+    banner.innerHTML = "⚠️ <strong>Extension cần cập nhật!</strong><br>Chạy <code style=\"background:rgba(0,0,0,0.25);padding:1px 5px;border-radius:3px\">update.bat</code> rồi reload Chrome.";
+    var body = document.getElementById("main-content") || document.body;
+    body.insertBefore(banner, body.firstChild);
+  }
+
   // Nút X đóng panel (nếu đang chạy trong iframe)
   var closePanelBtn = document.getElementById("btn-close-panel");
   if (closePanelBtn) {
