@@ -229,6 +229,10 @@ async function validateLicenseWithVPS(licenseKey) {
       if (Object.keys(keysToSave).length > 0) {
         await chrome.storage.local.set(keysToSave);
         console.log('[License] API keys saved:', Object.keys(keysToSave).join(', '));
+      } else {
+        // Server không trả key → xóa key cũ khỏi storage để không dùng lại
+        await chrome.storage.local.remove(['groqApiKey', 'openaiApiKey']);
+        console.log('[License] Server không trả key → đã xóa key cũ khỏi storage');
       }
 
       // Check version từ server response
