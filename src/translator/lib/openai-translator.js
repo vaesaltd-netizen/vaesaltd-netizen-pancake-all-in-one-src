@@ -570,9 +570,9 @@
           .map(m => `${roleLabel(m.role)}: ${m.text}`)
           .join('\n');
 
-        userContent = `Ngữ cảnh hội thoại:\n${contextLines}\n\nDịch tin nhắn sau sang tiếng Việt (chỉ trả về bản dịch):\n${currentTag}: ${text}`;
+        userContent = `/no_think\nNgữ cảnh hội thoại:\n${contextLines}\n\nDịch tin nhắn sau sang tiếng Việt (chỉ trả về bản dịch):\n${currentTag}: ${text}`;
       } else {
-        userContent = `Dịch tin nhắn sau sang tiếng Việt (chỉ trả về bản dịch):\n${currentTag}: ${text}`;
+        userContent = `/no_think\nDịch tin nhắn sau sang tiếng Việt (chỉ trả về bản dịch):\n${currentTag}: ${text}`;
       }
 
       const systemContent = 'Bạn là dịch giả chuyên nghiệp hỗ trợ nhóm CSKH bán hàng online người Việt. Dịch tin nhắn sang tiếng Việt tự nhiên, giữ nguyên emoji. Chỉ trả về bản dịch thuần, không kèm tag, không giải thích, không thêm ký tự nào ngoài bản dịch.\n\nBối cảnh: Hội thoại bán hàng online đa ngôn ngữ (Trung, Anh, Indonesia, Tagalog, Thái...). Khi gặp tin nhắn ngắn hoặc viết tắt, hãy suy luận từ ngữ cảnh hội thoại trước đó để dịch đúng nghĩa.\n\nQuy tắc quan trọng:\n- Tên sản phẩm, mã sản phẩm, tên thương hiệu (ví dụ: "M美白", "SK-II", "A3 serum"...) → GIỮ NGUYÊN, không dịch, không thêm bất kỳ ký tự nào như "=", "()", [].\n- Tên riêng của người (họ tên khách hàng, nhân viên) → GIỮ NGUYÊN.\n- Nếu tin nhắn chỉ gồm tên sản phẩm hoặc tên riêng → giữ nguyên toàn bộ.\n- KHÔNG giải thích, KHÔNG thêm chú thích, KHÔNG viết công thức hay phương trình.\n\nTừ xưng hô PHẢI dịch sang tiếng Việt (KHÔNG giữ nguyên chữ nước ngoài):\n- 姐姐/姊姊 → chị | 妹妹 → em | 哥哥/兄 → anh | 弟弟 → em\n- kakak/kak → chị/anh | adik/dik → em | ibu/bu → chị/cô | bapak/pak → anh/chú\n- ate/kuya → chị/anh (Tagalog) | nong → em (Thái)\n- Các từ xưng hô tương tự ở mọi ngôn ngữ đều phải dịch, KHÔNG để nguyên.\n\nTừ viết tắt phổ biến:\n- "$", "$?", "$$?" = Hỏi giá\n- "hm", "how much" = Bao nhiêu\n- "brp", "hrg brp", "harga?" = Giá bao nhiêu (Indonesia)\n- "mgkno", "magkano" = Bao nhiêu tiền (Tagalog)\n- "多少", "價格?" = Giá bao nhiêu (Trung)\n- "nt" = No thanks\n- "cod" = Thanh toán khi nhận hàng, "dp" = Đặt cọc, "ck" = Thanh toán\n\nQuy tắc xưng hô:\n- Tin nhắn khách hàng [KH]: dịch tự nhiên theo ý khách, KHÔNG thêm xưng hô không có trong bản gốc.\n- Tin nhắn nhân viên [NV]: gọi khách là "chị", nhân viên tự xưng "em".\n- Không thêm từ xưng hô nếu bản gốc không có.';
@@ -596,7 +596,7 @@
               { role: 'user', content: userContent }
             ],
             temperature: 0.3,
-            max_tokens: 500,
+            max_tokens: 1000,
             reasoning_effort: 'none'
           }),
           signal: controller.signal
@@ -680,7 +680,7 @@
               { role: 'user', content: userContent }
             ],
             temperature: 0.3,
-            max_tokens: 500
+            max_tokens: 1000
           }),
           signal: controller.signal
         });
@@ -733,9 +733,11 @@
       throw new Error('Chưa có API Key. Vui lòng cài đặt Groq hoặc OpenAI key.');
     }
 
-    // Translate reply to customer language (Groq qwen3-32b + reasoning_effort: none)
+    // Translate reply to customer language (Groq qwen3-32b + /no_think + reasoning_effort: none)
     async callTranslateReply(prompt) {
       await this.waitIfNeeded();
+      // Prepend /no_think to hard-disable Qwen3 chain-of-thought reasoning
+      const noThinkPrompt = '/no_think\n' + prompt;
       if (this.apiKey) {
         try {
           const controller = new AbortController();
@@ -747,9 +749,9 @@
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
               body: JSON.stringify({
                 model: GROQ_TRANSLATE_MODEL,
-                messages: [{ role: 'user', content: prompt }],
+                messages: [{ role: 'user', content: noThinkPrompt }],
                 temperature: 0.3,
-                max_tokens: 1000,
+                max_tokens: 3000,  // Tăng lên để nếu có think block thì đủ tokens để đóng </think>
                 reasoning_effort: 'none'
               }),
               signal: controller.signal
@@ -760,8 +762,14 @@
               throw new Error(err.error?.message || `Groq error: ${response.status}`);
             }
             const data = await response.json();
-            const result = this.cleanAIOutput(data.choices?.[0]?.message?.content?.trim());
+            const raw = data.choices?.[0]?.message?.content?.trim();
+            const result = this.cleanAIOutput(raw);
             if (!result) throw new Error('Empty response');
+            // Safety net: if think leak still present after clean, fallback to llama
+            if (this._hasThinkLeak(result)) {
+              log('Think leak detected after clean, falling back to llama...');
+              return this._callTranslateReplyWithLlama(prompt);
+            }
             chrome.storage.local.set({ activeProvider: 'groq' });
             return result;
           } catch (e) {
@@ -772,11 +780,41 @@
           if (this.openaiApiKey) {
             return this._callGeneralWithOpenAI(prompt);
           }
-          throw groqError;
+          // Last resort: fallback to llama (no think tags, reliable)
+          return this._callTranslateReplyWithLlama(prompt);
         }
       }
       if (this.openaiApiKey) return this._callGeneralWithOpenAI(prompt);
       throw new Error('Chưa có API Key.');
+    }
+
+    // Fallback translate reply using llama (no think tags)
+    async _callTranslateReplyWithLlama(prompt) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+      try {
+        const response = await fetch(GROQ_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
+          body: JSON.stringify({
+            model: GROQ_GENERAL_MODEL_FALLBACK,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.3,
+            max_tokens: 2000
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        if (!response.ok) throw new Error(`Llama fallback error: ${response.status}`);
+        const data = await response.json();
+        const result = this.cleanAIOutput(data.choices?.[0]?.message?.content?.trim());
+        if (!result) throw new Error('Empty llama response');
+        log('Translate reply: llama fallback success');
+        return result;
+      } catch (e) {
+        clearTimeout(timeout);
+        throw e;
+      }
     }
 
     async _callGeneralWithGroq(prompt) {
@@ -789,7 +827,7 @@
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
           body: JSON.stringify({
             model: GROQ_TRANSLATE_MODEL,
-            messages: [{ role: 'user', content: prompt }],
+            messages: [{ role: 'user', content: '/no_think\n' + prompt }],
             temperature: 0.5,
             max_tokens: 1000,
             reasoning_effort: 'none'
@@ -852,12 +890,19 @@
       text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       // Strip unclosed <think> block (model cut off mid-think)
       text = text.replace(/<think>[\s\S]*/gi, '').trim();
+      // Strip /no_think echo if model reflects it back
+      text = text.replace(/^\/no_think\s*/i, '').trim();
       // Strip role echo tags [KH]: / [NV]:
       text = text.replace(/^\[(KH|NV)\]:\s*/i, '');
       // Strip system prompt echo lines
       text = text.replace(/^\[chỉ bản dịch.*\]\s*/im, '').trim();
       text = text.replace(/^\[only.*translation.*\]\s*/im, '').trim();
       return text.trim();
+    }
+
+    // Check if text still contains think leak (fallback trigger)
+    _hasThinkLeak(text) {
+      return text && /<think>/i.test(text);
     }
 
     // ==================== Optimized Batch Translate ====================
