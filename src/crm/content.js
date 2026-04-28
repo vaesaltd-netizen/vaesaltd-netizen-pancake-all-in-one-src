@@ -294,6 +294,11 @@
       </div>
 
       <div class="pcrm-field">
+        <label>Nơi Nhận Hàng</label>
+        <select id="pcrm-order-noinhanhang"><option value="">Chọn nơi nhận hàng</option></select>
+      </div>
+
+      <div class="pcrm-field">
         <label>Hồ Sơ Khách Hàng</label>
         <input type="text" id="pcrm-order-profile" placeholder="Nhập hồ sơ KH">
       </div>
@@ -326,6 +331,12 @@
       <button type="button" class="pcrm-btn-add-line" id="pcrm-add-line">+ Thêm sản phẩm</button>
 
       <div class="pcrm-field" style="margin-top:12px">
+        <label>Tiền cod Đài (đ)</label>
+        <input type="number" id="pcrm-order-tiencoddai" placeholder="VD: 500000 = 500.000đ" min="0">
+        <span class="pcrm-field-hint" id="pcrm-tiencoddai-hint"></span>
+      </div>
+
+      <div class="pcrm-field">
         <label>Chiết Khấu (đ)</label>
         <input type="number" id="pcrm-order-discount" placeholder="VD: 500000 = 500.000đ" min="0">
         <span class="pcrm-field-hint" id="pcrm-discount-hint"></span>
@@ -486,6 +497,14 @@
   discountInput.addEventListener('input', () => {
     const val = parseInt(discountInput.value) || 0;
     discountHint.textContent = val > 0 ? '= ' + formatPrice(val) : '';
+  });
+
+  // Tiền cod Đài input - show formatted hint
+  const tiencodDaiInput = document.getElementById('pcrm-order-tiencoddai');
+  const tiencodDaiHint = document.getElementById('pcrm-tiencoddai-hint');
+  tiencodDaiInput.addEventListener('input', () => {
+    const val = parseInt(tiencodDaiInput.value) || 0;
+    tiencodDaiHint.textContent = val > 0 ? '= ' + formatPrice(val) : '';
   });
 
   // Combo select
@@ -1226,6 +1245,7 @@
     fillSelect('pcrm-order-warehouse', orderSettingsData.warehouses || [], savedOrder['pcrm-order-warehouse']);
     fillSelect('pcrm-order-type', orderSettingsData.orderTypes || [], savedOrder['pcrm-order-type']);
     fillSelect('pcrm-order-salessource', orderSettingsData.salesSources || [], savedOrder['pcrm-order-salessource']);
+    fillSelect('pcrm-order-noinhanhang', orderSettingsData.noinhanhang || [], savedOrder['pcrm-order-noinhanhang']);
 
     // Store products for order lines
     orderProductOptions = orderSettingsData.products || [];
@@ -1371,7 +1391,8 @@
     const selections = {
       'pcrm-order-warehouse': document.getElementById('pcrm-order-warehouse')?.value || '',
       'pcrm-order-type': document.getElementById('pcrm-order-type')?.value || '',
-      'pcrm-order-salessource': document.getElementById('pcrm-order-salessource')?.value || ''
+      'pcrm-order-salessource': document.getElementById('pcrm-order-salessource')?.value || '',
+      'pcrm-order-noinhanhang': document.getElementById('pcrm-order-noinhanhang')?.value || ''
     };
     try {
       localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(selections));
@@ -1464,10 +1485,12 @@
       warehouse_id: parseInt(document.getElementById('pcrm-order-warehouse').value) || 0,
       loaidonhang_id: parseInt(document.getElementById('pcrm-order-type').value) || 0,
       nguonbannguondaily_id: parseInt(document.getElementById('pcrm-order-salessource').value) || 0,
+      noinhanhang_id: parseInt(document.getElementById('pcrm-order-noinhanhang').value) || 0,
       hosokhachhang: document.getElementById('pcrm-order-profile').value,
       nhanvienkinhdoanhghichu: document.getElementById('pcrm-order-staffnote').value,
       note: document.getElementById('pcrm-order-shipnote').value,
       order_line: orderLine,
+      tiencoddailoan: parseInt(document.getElementById('pcrm-order-tiencoddai').value) || 0,
       chietkhaubosung: 0
     };
 
@@ -1495,6 +1518,8 @@
           document.getElementById('pcrm-order-profile').value = '';
           document.getElementById('pcrm-order-staffnote').value = '';
           document.getElementById('pcrm-order-shipnote').value = '';
+          document.getElementById('pcrm-order-tiencoddai').value = '';
+          document.getElementById('pcrm-tiencoddai-hint').textContent = '';
           document.getElementById('pcrm-order-discount').value = '';
           orderLinesContainer.innerHTML = '';
           comboSelect.value = '';

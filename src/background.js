@@ -661,11 +661,12 @@ async function fetchOrderSettings() {
   console.log('[Pancake CRM] Fetching order settings from ERP API...');
 
   try {
-    const [warehousesRes, orderTypesRes, salesSourcesRes, productsRes] = await Promise.all([
+    const [warehousesRes, orderTypesRes, salesSourcesRes, productsRes, noinhanhangRes] = await Promise.all([
       fetchERPList('/api/vaesa/stock_warehouse/list', [], 100),
       fetchERPList('/api/vaesa/loaidonhang/list', [], 100),
       fetchERPList('/api/vaesa/nguondaily/list', [], 100),
-      fetchERPList('/api/vaesa/product_product/list', [['sale_ok', '=', true]], 500)
+      fetchERPList('/api/vaesa/product_product/list', [['sale_ok', '=', true]], 500),
+      fetchERPList('/api/vaesa/noinhanhang/list', [], 100)
     ]);
 
     orderSettingsCache = {
@@ -676,14 +677,16 @@ async function fetchOrderSettings() {
         id: item.id,
         name: item.name,
         price: item.lst_price || 0
-      }))
+      })),
+      noinhanhang: noinhanhangRes.map(item => ({ id: item.id, name: item.name }))
     };
 
     console.log('[Pancake CRM] Order settings loaded:', {
       warehouses: orderSettingsCache.warehouses.length,
       orderTypes: orderSettingsCache.orderTypes.length,
       salesSources: orderSettingsCache.salesSources.length,
-      products: orderSettingsCache.products.length
+      products: orderSettingsCache.products.length,
+      noinhanhang: orderSettingsCache.noinhanhang.length
     });
 
     return { success: true, data: orderSettingsCache };
