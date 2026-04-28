@@ -331,8 +331,8 @@
       <button type="button" class="pcrm-btn-add-line" id="pcrm-add-line">+ Thêm sản phẩm</button>
 
       <div class="pcrm-field" style="margin-top:12px">
-        <label>Tiền cod Đài (đ)</label>
-        <input type="number" id="pcrm-order-tiencoddai" placeholder="VD: 500000 = 500.000đ" min="0">
+        <label>Tiền cod Đài (TWD)</label>
+        <input type="number" id="pcrm-order-tiencoddai" placeholder="VD: 500 = NT$500" min="0">
         <span class="pcrm-field-hint" id="pcrm-tiencoddai-hint"></span>
       </div>
 
@@ -499,12 +499,12 @@
     discountHint.textContent = val > 0 ? '= ' + formatPrice(val) : '';
   });
 
-  // Tiền cod Đài input - show formatted hint
+  // Tiền cod Đài input - show formatted hint (TWD - Đài tệ)
   const tiencodDaiInput = document.getElementById('pcrm-order-tiencoddai');
   const tiencodDaiHint = document.getElementById('pcrm-tiencoddai-hint');
   tiencodDaiInput.addEventListener('input', () => {
     const val = parseInt(tiencodDaiInput.value) || 0;
-    tiencodDaiHint.textContent = val > 0 ? '= ' + formatPrice(val) : '';
+    tiencodDaiHint.textContent = val > 0 ? '= NT$' + new Intl.NumberFormat('en-US').format(val) : '';
   });
 
   // Combo select
