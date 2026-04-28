@@ -666,9 +666,9 @@ async function fetchOrderSettings() {
       fetchERPList('/api/vaesa/loaidonhang/list', [], 100),
       fetchERPList('/api/vaesa/nguondaily/list', [], 100),
       fetchERPList('/api/vaesa/product_product/list', [['sale_ok', '=', true]], 500),
-      // noinhanhang: nếu endpoint chưa tồn tại → trả [] thay vì làm vỡ toàn bộ
-      fetchERPList('/api/vaesa/noinhanhang/list', [], 100).catch(err => {
-        console.warn('[Pancake CRM] noinhanhang endpoint không khả dụng:', err.message);
+      // noinhanhang_id: nếu endpoint chưa tồn tại → trả [] thay vì làm vỡ toàn bộ
+      fetchERPList('/api/vaesa/noinhanhang_id/list', [], 100).catch(err => {
+        console.warn('[Pancake CRM] noinhanhang_id endpoint không khả dụng:', err.message);
         return [];
       })
     ]);
