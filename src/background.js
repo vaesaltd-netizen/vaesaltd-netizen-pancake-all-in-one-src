@@ -666,9 +666,13 @@ async function fetchOrderSettings() {
       fetchERPList('/api/vaesa/loaidonhang/list', [], 100),
       fetchERPList('/api/vaesa/nguondaily/list', [], 100),
       fetchERPList('/api/vaesa/product_product/list', [['sale_ok', '=', true]], 500),
-      // noinhanhang_id: nếu endpoint chưa tồn tại → trả [] thay vì làm vỡ toàn bộ
-      fetchERPList('/api/vaesa/noinhanhang_id/list', [], 100).catch(err => {
-        console.warn('[Pancake CRM] noinhanhang_id endpoint không khả dụng:', err.message);
+      // noinhanhang: gọi trực tiếp vaesa.soly.com.vn (Worker proxy chưa whitelist endpoint này)
+      fetch('https://vaesa.soly.com.vn/api/vaesa/noinhanhang/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      }).then(r => r.json()).then(data => data.result?.items || []).catch(err => {
+        console.warn('[Pancake CRM] noinhanhang fetch failed:', err.message);
         return [];
       })
     ]);
