@@ -733,88 +733,56 @@
       throw new Error('Chưa có API Key. Vui lòng cài đặt Groq hoặc OpenAI key.');
     }
 
-    // Translate reply to customer language (Groq qwen3-32b + /no_think + reasoning_effort: none)
+    // Translate reply to customer language
+    // Priority: OpenAI first (no think tags) → Groq llama fallback (no think tags)
     async callTranslateReply(prompt) {
       await this.waitIfNeeded();
-      // Prepend /no_think to hard-disable Qwen3 chain-of-thought reasoning
-      const noThinkPrompt = '/no_think\n' + prompt;
-      if (this.apiKey) {
+
+      // OpenAI first — không có think block, ổn định
+      if (this.openaiApiKey) {
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 60000);
-          try {
-            this.stats.apiCalls++;
-            const response = await fetch(GROQ_API_ENDPOINT, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
-              body: JSON.stringify({
-                model: GROQ_TRANSLATE_MODEL,
-                messages: [{ role: 'user', content: noThinkPrompt }],
-                temperature: 0.3,
-                max_tokens: 3000,  // Tăng lên để nếu có think block thì đủ tokens để đóng </think>
-                reasoning_effort: 'none'
-              }),
-              signal: controller.signal
-            });
-            clearTimeout(timeout);
-            if (!response.ok) {
-              const err = await response.json().catch(() => ({}));
-              throw new Error(err.error?.message || `Groq error: ${response.status}`);
-            }
-            const data = await response.json();
-            const raw = data.choices?.[0]?.message?.content?.trim();
-            const result = this.cleanAIOutput(raw);
-            if (!result) throw new Error('Empty response');
-            // Safety net: if think leak still present after clean, fallback to llama
-            if (this._hasThinkLeak(result)) {
-              log('Think leak detected after clean, falling back to llama...');
-              return this._callTranslateReplyWithLlama(prompt);
-            }
-            chrome.storage.local.set({ activeProvider: 'groq' });
-            return result;
-          } catch (e) {
-            clearTimeout(timeout);
-            throw e;
-          }
-        } catch (groqError) {
-          if (this.openaiApiKey) {
-            return this._callGeneralWithOpenAI(prompt);
-          }
-          // Last resort: fallback to llama (no think tags, reliable)
-          return this._callTranslateReplyWithLlama(prompt);
+          const result = await this._callGeneralWithOpenAI(prompt);
+          log('Translate reply: OpenAI success');
+          return result;
+        } catch (openaiError) {
+          log('Translate reply: OpenAI failed, trying Groq llama:', openaiError.message);
         }
       }
-      if (this.openaiApiKey) return this._callGeneralWithOpenAI(prompt);
-      throw new Error('Chưa có API Key.');
-    }
 
-    // Fallback translate reply using llama (no think tags)
-    async _callTranslateReplyWithLlama(prompt) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
-      try {
-        const response = await fetch(GROQ_API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
-          body: JSON.stringify({
-            model: GROQ_GENERAL_MODEL_FALLBACK,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.3,
-            max_tokens: 2000
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(timeout);
-        if (!response.ok) throw new Error(`Llama fallback error: ${response.status}`);
-        const data = await response.json();
-        const result = this.cleanAIOutput(data.choices?.[0]?.message?.content?.trim());
-        if (!result) throw new Error('Empty llama response');
-        log('Translate reply: llama fallback success');
-        return result;
-      } catch (e) {
-        clearTimeout(timeout);
-        throw e;
+      // Groq fallback — dùng llama (không có think tags), KHÔNG dùng qwen3
+      if (this.apiKey) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 60000);
+        try {
+          this.stats.apiCalls++;
+          const response = await fetch(GROQ_API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.apiKey}` },
+            body: JSON.stringify({
+              model: GROQ_GENERAL_MODEL_FALLBACK, // llama-3.3-70b — không có think tags
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.3,
+              max_tokens: 2000
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(timeout);
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error?.message || `Groq error: ${response.status}`);
+          }
+          const data = await response.json();
+          const result = this.cleanAIOutput(data.choices?.[0]?.message?.content?.trim());
+          if (!result) throw new Error('Empty response');
+          log('Translate reply: Groq llama success');
+          return result;
+        } catch (e) {
+          clearTimeout(timeout);
+          throw e;
+        }
       }
+
+      throw new Error('Chưa có API Key.');
     }
 
     async _callGeneralWithGroq(prompt) {
