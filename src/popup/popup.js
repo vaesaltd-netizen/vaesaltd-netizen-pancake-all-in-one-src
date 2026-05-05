@@ -1,5 +1,5 @@
 // popup/popup.js - Settings popup logic
-// v4.0 - Groq + OpenAI dual key, translate-only
+// v5.0 - OpenAI only (Groq removed)
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -168,11 +168,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function loadProviderStatus() {
-    const data = await chrome.storage.local.get(['groqApiKey', 'openaiApiKey', 'activeProvider']);
-    if (data.groqApiKey || data.openaiApiKey) {
+    // Groq removed in v5.0.0 — chỉ hiển thị OpenAI
+    const data = await chrome.storage.local.get(['openaiApiKey']);
+    if (data.openaiApiKey) {
       providerSection.style.display = 'block';
-      const provider = data.activeProvider || 'groq';
-      activeProviderText.textContent = provider === 'groq' ? '⚡ Đang dùng: Groq' : '🤖 Fallback: OpenAI GPT';
+      activeProviderText.textContent = '🤖 Đang dùng: OpenAI GPT';
     }
   }
 

@@ -99,18 +99,13 @@
         this.showNoKeyWarning();
       }
 
-      // Listen for API key changes
+      // Listen for OpenAI API key changes (Groq removed in v5.0.0)
       chrome.storage.onChanged.addListener((changes) => {
-        if (changes.groqApiKey?.newValue) {
-          window.openaiTranslator.setApiKey(changes.groqApiKey.newValue);
-          window.openaiTranslator.groqApiKey = changes.groqApiKey.newValue;
-          log('Groq API key updated');
+        if (changes.openaiApiKey?.newValue) {
+          window.openaiTranslator.setApiKey(changes.openaiApiKey.newValue);
+          log('OpenAI API key updated');
           this.hideNoKeyWarning();
           this.scanForMessages();
-        }
-        if (changes.openaiApiKey?.newValue) {
-          window.openaiTranslator.openaiApiKey = changes.openaiApiKey.newValue;
-          log('OpenAI API key updated');
         }
       });
 

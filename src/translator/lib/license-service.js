@@ -124,12 +124,9 @@
       if (this.cachedLicense) {
         this.cachedLicense.expiresAt = 0;
       }
-      // Remove invalid keys from storage
-      chrome.storage.local.remove(['groqApiKey', 'openaiApiKey']);
-      // Also clear keys from openaiTranslator memory instance so it stops using them immediately
+      // Remove invalid OpenAI key from storage (Groq removed in v5.0.0)
+      chrome.storage.local.remove(['openaiApiKey']);
       if (window.openaiTranslator) {
-        window.openaiTranslator.apiKey = null;
-        window.openaiTranslator.groqApiKey = null;
         window.openaiTranslator.openaiApiKey = null;
       }
     }
