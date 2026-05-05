@@ -1437,31 +1437,11 @@
       return;
     }
 
-    // Distribute discount proportionally across products
+    // Tổng chiết khấu — gửi trực tiếp qua field chietkhautongdon (ERP tự xử lý phân bổ)
     const totalDiscount = parseInt(document.getElementById('pcrm-order-discount').value) || 0;
-    const totalOriginalPrice = lineItems.reduce((sum, item) => sum + item.price * item.qty, 0);
-    const orderLine = [];
-
-    if (totalDiscount > 0 && totalOriginalPrice > 0) {
-      let discountUsed = 0;
-      for (let i = 0; i < lineItems.length; i++) {
-        const item = lineItems[i];
-        const lineData = { product_id: item.productId, product_uom_qty: item.qty };
-        if (i === lineItems.length - 1) {
-          // Last item gets remaining discount to ensure exact total
-          lineData.discount_fixed = totalDiscount - discountUsed;
-        } else {
-          const itemDiscount = Math.floor(item.price * item.qty / totalOriginalPrice * totalDiscount);
-          lineData.discount_fixed = itemDiscount;
-          discountUsed += itemDiscount;
-        }
-        orderLine.push([0, 0, lineData]);
-      }
-    } else {
-      for (const item of lineItems) {
-        orderLine.push([0, 0, { product_id: item.productId, product_uom_qty: item.qty }]);
-      }
-    }
+    const orderLine = lineItems.map(item =>
+      [0, 0, { product_id: item.productId, product_uom_qty: item.qty }]
+    );
 
     // Build payload - API /create tạo cả KH + đơn hàng cùng lúc
     const thongtinkhachhang = {
@@ -1491,7 +1471,7 @@
       note: document.getElementById('pcrm-order-shipnote').value,
       order_line: orderLine,
       tiencoddailoan: parseInt(document.getElementById('pcrm-order-tiencoddai').value) || 0,
-      chietkhaubosung: 0
+      chietkhautongdon: totalDiscount
     };
 
     const payload = { thongtinkhachhang, thongtindonhang };
