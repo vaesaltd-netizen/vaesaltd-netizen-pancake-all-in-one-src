@@ -611,6 +611,9 @@
       // Strip system prompt echo lines
       text = text.replace(/^\[chỉ bản dịch.*\]\s*/im, '').trim();
       text = text.replace(/^\[only.*translation.*\]\s*/im, '').trim();
+      // NOTE: Không strip header/lang-tag ở đây vì callTranslateReply trả format
+      // "REPLY: ...\nVIET: ..." — strip ở đây sẽ làm vỡ format. Strip làm trong
+      // inline-toolbar handleAction sau khi parse REPLY:/VIET: xong.
       return text.trim();
     }
 

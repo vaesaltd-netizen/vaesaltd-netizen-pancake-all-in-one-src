@@ -796,13 +796,37 @@
 
         if (result) {
           // Extract foreign language reply and Vietnamese translation
-          const foreignMatch = result.match(/REPLY:\s*(.+?)(?=VIET:|$)/s);
-          const vietMatch = result.match(/VIET:\s*(.+?)$/s);
+          const foreignMatch = result.match(/REPLY:\s*([\s\S]+?)(?=VIET:|$)/);
+          const vietMatch = result.match(/VIET:\s*([\s\S]+?)$/);
 
           let reply = foreignMatch ? foreignMatch[1].trim() : result.replace(/VIET:[\s\S]*$/i, '').trim() || result;
-          // Strip leading/trailing brackets nếu model vẫn bọc [...]
-          reply = reply.replace(/^\[|\]$/g, '').trim();
           const vietTranslation = vietMatch ? vietMatch[1].trim() : '';
+
+          // ============ LAYER 2: STRIP CHAIN ============
+          // 1. Strip wrap header "bản dịch sang ngôn ngữ khách" (multi-line tolerant)
+          reply = reply.replace(/^\s*bản dịch sang ngôn ngữ khách[\s:：\n]*/i, '').trim();
+          reply = reply.replace(/^\s*translation to customer language[\s:：\n]*/i, '').trim();
+
+          // 2. Strip header line ("Bản dịch:", "Translation:", "翻譯：", "翻译：", "翻訳:", "การแปล:")
+          reply = reply.replace(/^(bản dịch|translation|翻[譯译]|翻訳|การแปล)\s*[:：]?\s*\n+/i, '').trim();
+
+          // 3. Strip lang tag prefix (繁體中文: / Bahasa Indonesia: / Tiếng Anh: / English: / ภาษาไทย: ...)
+          reply = reply.replace(/^(繁體中文|繁体中文|簡體中文|简体中文|中文|Chinese Traditional|Chinese Simplified|Bahasa Indonesia|Indonesia|Tiếng Anh|Tiếng Việt|English|Anh|Indo|ภาษาไทย|Thai|Filipino|Tagalog)\s*[:：]\s*/i, '').trim();
+
+          // 4. Strip trailing note ("\n\n(原文: ...)", "Lưu ý: ...", "Note: ...", "備註: ...")
+          reply = reply.replace(/\n\n\(?(原文|Lưu ý|Note|Ghi chú|Original|備註|备注|注意)[:：][\s\S]*$/i, '').trim();
+
+          // 5. Strip wrap brackets [...]
+          reply = reply.replace(/^\[|\]$/g, '').trim();
+
+          // 6. Reject nếu reply BẮT ĐẦU bằng "bản dịch..." (sau khi strip vẫn còn → từ chối)
+          if (/^bản dịch sang ngôn ngữ khách/i.test(reply)) {
+            log('Reply still contains template echo after strip → reject');
+            this.hideVietPreview();
+            alert('Lỗi: AI trả về template không hợp lệ. Vui lòng thử lại.');
+            this.setLoading(false);
+            return;
+          }
 
           // Set to chat input
           this.setPancakeChatInput(reply);
@@ -1091,9 +1115,24 @@ ${vietnameseText}
 - KHÔNG gộp nhiều dòng thành 1 dòng
 - KHÔNG thay đổi cấu trúc danh sách
 
-Trả lời ĐÚNG format sau (không thêm bất kỳ text nào khác):
-REPLY: bản dịch sang ngôn ngữ khách
-VIET: ${vietnameseText}`;
+🔴 OUTPUT FORMAT — CHỈ 2 DÒNG, KHÔNG THÊM BẤT KỲ KÝ TỰ NÀO KHÁC:
+REPLY: <chỉ ghi bản dịch ở đây, KHÔNG ghi tên ngôn ngữ, KHÔNG ghi "bản dịch sang ngôn ngữ khách">
+VIET: <chỉ ghi câu tiếng Việt gốc>
+
+VÍ DỤ ĐÚNG (target = 繁體中文):
+REPLY: 小型套組 2,750 NT$
+VIET: Combo nhỏ 2,750 NT$
+
+VÍ DỤ SAI — TUYỆT ĐỐI KHÔNG ĐƯỢC LÀM:
+- "REPLY: 翻譯：小型套組..." (có header "翻譯：")
+- "REPLY: 繁體中文: 小型套組..." (có lang tag prefix)
+- "REPLY: bản dịch sang ngôn ngữ khách\n小型套組..." (echo template)
+- "REPLY: 小型套組 (原文: Combo nhỏ)" (trailing note)
+
+Câu thật cần dịch:
+"""
+${vietnameseText}
+"""`;
 
       return await window.openaiTranslator.callTranslateReply(prompt);
     }
